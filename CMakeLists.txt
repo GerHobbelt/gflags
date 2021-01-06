@@ -111,6 +111,9 @@ version_numbers (
     PACKAGE_VERSION_PATCH
 )
 
+# ====== Tangent Rez Deps
+include(${CMAKE_CURRENT_SOURCE_DIR}/rez_deps.cmake)
+
 # shared library ABI version number, can be overridden by package maintainers
 # using -DGFLAGS_SOVERSION=XXX on the command-line
 if (GFLAGS_SOVERSION)

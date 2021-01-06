@@ -1,0 +1,3 @@
+if (UNIX)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif (UNIX)

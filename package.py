@@ -2,7 +2,7 @@
 
 name = 'gflags'
 
-version = '2.2.2-ta.1.0.0'
+version = '2.2.2-ta.1.1.0'
 
 authors = [
     'benjamin.skinner',
