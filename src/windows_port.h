@@ -107,7 +107,7 @@ inline void setenv(const char* name, const char* value, int) {
 #define strcasecmp _stricmp
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-#define strdup   _strdup
+//#define strdup   _strdup
 #define unlink   _unlink
 #endif
 
