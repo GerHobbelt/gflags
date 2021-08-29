@@ -934,7 +934,7 @@ class CommandLineFlagParser {
   // before.  Typically this is only called once, so this 'reparsing'
   // behavior isn't important.  It can be useful when trying to
   // reparse after loading a dll, though.
-  uint32 ParseNewCommandLineFlags(int* argc, char*** argv, bool remove_flags);
+  uint32 ParseNewCommandLineFlags(int* argc, const char*** argv, bool remove_flags);
 
   // Stage 2: print reporting info and exit, if requested.
   // In gflags_reporting.cc:HandleCommandLineHelpFlags().
@@ -1027,13 +1027,13 @@ static string ReadFileIntoString(const char* filename) {
   return s;
 }
 
-uint32 CommandLineFlagParser::ParseNewCommandLineFlags(int* argc, char*** argv,
+uint32 CommandLineFlagParser::ParseNewCommandLineFlags(int* argc, const char*** argv,
                                                        bool remove_flags) {
   int first_nonopt = *argc;        // for non-options moved to the end
 
   registry_->Lock();
   for (int i = 1; i < first_nonopt; i++) {
-    char* arg = (*argv)[i];
+	  const char* arg = (*argv)[i];
 
     // Like getopt(), we permute non-option flags to be at the end.
     if (arg[0] != '-' || arg[1] == '\0') {	// must be a program argument: "-" is an argument, not a flag
@@ -1931,7 +1931,7 @@ bool RegisterFlagValidator(const string* flag,
 //    the parsing of the flags and the printing of any help output.
 // --------------------------------------------------------------------
 
-static uint32 ParseCommandLineFlagsInternal(int* argc, char*** argv,
+static uint32 ParseCommandLineFlagsInternal(int* argc, const char*** argv,
                                             bool remove_flags, bool do_report) {
   SetArgv(*argc, const_cast<const char**>(*argv));    // save it for later
 
@@ -1964,11 +1964,11 @@ static uint32 ParseCommandLineFlagsInternal(int* argc, char*** argv,
   return r;
 }
 
-uint32 ParseCommandLineFlags(int* argc, char*** argv, bool remove_flags) {
+uint32 ParseCommandLineFlags(int* argc, const char*** argv, bool remove_flags) {
   return ParseCommandLineFlagsInternal(argc, argv, remove_flags, true);
 }
 
-uint32 ParseCommandLineNonHelpFlags(int* argc, char*** argv,
+uint32 ParseCommandLineNonHelpFlags(int* argc, const char*** argv,
                                     bool remove_flags) {
   return ParseCommandLineFlagsInternal(argc, argv, remove_flags, false);
 }
@@ -1994,14 +1994,14 @@ void ReparseCommandLineNonHelpFlags() {
   // We make a copy of argc and argv to pass in
   const vector<string>& argvs = GetArgvs();
   int tmp_argc = static_cast<int>(argvs.size());
-  char** tmp_argv = new char* [tmp_argc + 1];
+  const char** tmp_argv = new const char* [tmp_argc + 1];
   for (int i = 0; i < tmp_argc; ++i)
     tmp_argv[i] = strdup(argvs[i].c_str());   // TODO(csilvers): don't dup
 
   ParseCommandLineNonHelpFlags(&tmp_argc, &tmp_argv, false);
 
   for (int i = 0; i < tmp_argc; ++i)
-    free(tmp_argv[i]);
+    free((void *)tmp_argv[i]);
   delete[] tmp_argv;
 }
 

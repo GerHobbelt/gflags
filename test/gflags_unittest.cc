@@ -237,7 +237,6 @@ namespace GFLAGS_NAMESPACE {
 
 namespace {
 
-
 static string TmpFile(const string& basename) {
 #ifdef _MSC_VER
   return FLAGS_test_tmpdir + "\\" + basename;
@@ -1163,7 +1162,7 @@ TEST(DeprecatedFunctionsTest, ReadFromFlagsFile) {
   r = ReadFromFlagsFile(filename, GetArgv0(), true);
   EXPECT_TRUE(r);
   EXPECT_EQ(-10, FLAGS_test_int32);
-}  // unnamed namespace
+}
 
 TEST(DeprecatedFunctionsTest, ReadFromFlagsFileFailure) {
   FLAGS_test_int32 = -20;
@@ -1200,8 +1199,8 @@ int32 ParseTestFlag(bool with_help, int argc, const char** const_argv) {
   // Makes a copy of the input array s.t. it can be reused
   // (ParseCommandLineFlags() will alter the array).
   char** const argv_save = new char*[argc + 1];
-  char** argv = argv_save;
-  memcpy(argv, const_argv, sizeof(*argv)*(argc + 1));
+  const char** argv = (const char**)argv_save;
+  memcpy((void *)argv, const_argv, sizeof(*argv) * (argc + 1));
 
   if (with_help) {
     ParseCommandLineFlags(&argc, &argv, true);
@@ -1518,10 +1517,15 @@ TEST(FlagsValidator, FlagSaver) {
   EXPECT_EQ("", SetCommandLineOption("test_flag", "50"));  // validator is back
 }
 
-
 }  // unnamed namespace
 
-static int main(int argc, char **argv) {
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      gflags_test_unittests_main(cnt, arr)
+#endif
+
+
+static int main(int argc, const char **argv) {
 
   // Run unit tests only if called without arguments, otherwise this program
   // is used by an "external" usage test
@@ -1566,7 +1570,9 @@ static int main(int argc, char **argv) {
 
 } // GFLAGS_NAMESPACE
 
-int main(int argc, char** argv) {
+
+int main(int argc, const char** argv)
+{
   return GFLAGS_NAMESPACE::main(argc, argv);
 }
 

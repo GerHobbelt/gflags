@@ -67,7 +67,12 @@ DEFINE_string(some_string_flag,
 
 #endif
 
-int main(int, char **)
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      gflags_test_nc_main(cnt, arr)
+#endif
+
+int main(int argc, const char** argv)
 {
   return 0;
 }

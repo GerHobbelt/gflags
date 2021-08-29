@@ -45,7 +45,14 @@ using GFLAGS_NAMESPACE::ParseCommandLineFlags;
 
 DEFINE_bool(test, true, "This text should be stripped out");
 
-int main(int argc, char** argv) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      gflags_test_strip_flags_main(cnt, arr)
+#endif
+
+int main(int argc, const char** argv)
+{
   SetUsageMessage("Usage message");
   ParseCommandLineFlags(&argc, &argv, false);
 

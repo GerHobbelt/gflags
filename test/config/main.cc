@@ -9,7 +9,13 @@ static bool ValidateMessage(const char* flagname, const std::string &message)
 }
 DEFINE_validator(message, ValidateMessage);
 
-int main(int argc, char **argv)
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      gflags_test_config_main(cnt, arr)
+#endif
+
+int main(int argc, const char** argv)
 {
   gflags::SetUsageMessage("Test CMake configuration of gflags library (gflags-config.cmake)");
   gflags::SetVersionString("0.1");
