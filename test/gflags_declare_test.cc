@@ -1,7 +1,11 @@
 #include <gflags/gflags.h>
 
+#if defined(BUILD_MONOLITHIC)
+DECLARE_string(message); // in gflags_delcare_test.cc
+#else
 DEFINE_string(message, "", "The message to print");
-void print_message(); // in gflags_declare_flags.cc
+#endif
+void gflags_print_message(); // in gflags_declare_flags.cc
 
 
 
@@ -13,6 +17,6 @@ int main(int argc, const char** argv)
 {
   GFLAGS_NAMESPACE::SetUsageMessage("Test compilation and use of gflags_declare.h");
   GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, true);
-  print_message();
+  gflags_print_message();
   return 0;
 }
