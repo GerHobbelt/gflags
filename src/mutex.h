@@ -110,7 +110,7 @@
 
 #if defined(NO_THREADS)
   typedef int MutexType;        // to keep a lock-count
-#elif defined(OS_WINDOWS)
+#elif defined(OS_WINDOWS) && !defined(HAVE_PTHREAD)
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN  // We only need minimal includes
 # endif
@@ -149,6 +149,33 @@
 
 #include <assert.h>
 #include <stdlib.h>      // for abort()
+
+
+namespace GFLAGS_NAMESPACE {
+
+#if defined(__GNUC__)
+	typedef void (*gflags_fail_func_t)() __attribute__((noreturn));
+#else
+	typedef void (*gflags_fail_func_t)();
+#endif
+
+	// Annoying stuff for windows -- makes sure clients can import these functions
+#ifndef GOOGLE_GFLAGS_DLL_DECL
+# if defined(_WIN32) && !defined(__CYGWIN__)
+#   define GOOGLE_GFLAGS_DLL_DECL  __declspec(dllimport)
+# else
+#   define GOOGLE_GFLAGS_DLL_DECL
+# endif
+#endif
+
+// Install a function which will be called after LOG(FATAL).
+	GOOGLE_GFLAGS_DLL_DECL void InstallGFlagsFailureFunction(gflags_fail_func_t fail_func);
+
+	[[noreturn]] void gflags_fail_abort();
+
+}
+
+
 
 #define MUTEX_NAMESPACE gflags_mutex_namespace
 
@@ -227,7 +254,7 @@ bool Mutex::TryLock()      { if (mutex_) return false; Lock(); return true; }
 void Mutex::ReaderLock()   { assert(++mutex_ > 0); }
 void Mutex::ReaderUnlock() { assert(mutex_-- > 0); }
 
-#elif defined(OS_WINDOWS)
+#elif defined(OS_WINDOWS) && !defined(HAVE_PTHREAD)
 
 Mutex::Mutex() : destroy_(true) {
   InitializeCriticalSection(&mutex_);
@@ -249,17 +276,17 @@ void Mutex::ReaderUnlock() { Unlock(); }
 
 #elif defined(HAVE_PTHREAD) && defined(HAVE_RWLOCK)
 
-#define SAFE_PTHREAD(fncall)  do {   /* run fncall if is_safe_ is true */  \
-  if (is_safe_ && fncall(&mutex_) != 0) abort();                           \
+#define SAFE_PTHREAD(fncall)  do {   /* run fncall if is_safe_ is true */                    \
+  if (is_safe_ && fncall(&mutex_) != 0) GFLAGS_NAMESPACE::gflags_fail_abort();               \
 } while (0)
 
 Mutex::Mutex() : destroy_(true) {
   SetIsSafe();
-  if (is_safe_ && pthread_rwlock_init(&mutex_, NULL) != 0) abort();
+  if (is_safe_ && pthread_rwlock_init(&mutex_, NULL) != 0) GFLAGS_NAMESPACE::gflags_fail_abort();
 }
 Mutex::Mutex(Mutex::LinkerInitialized) : destroy_(false) {
   SetIsSafe();
-  if (is_safe_ && pthread_rwlock_init(&mutex_, NULL) != 0) abort();
+  if (is_safe_ && pthread_rwlock_init(&mutex_, NULL) != 0) GFLAGS_NAMESPACE::gflags_fail_abort();
 }
 Mutex::~Mutex()       { if (destroy_) SAFE_PTHREAD(pthread_rwlock_destroy); }
 void Mutex::Lock()         { SAFE_PTHREAD(pthread_rwlock_wrlock); }
@@ -274,17 +301,17 @@ void Mutex::ReaderUnlock() { SAFE_PTHREAD(pthread_rwlock_unlock); }
 
 #elif defined(HAVE_PTHREAD)
 
-#define SAFE_PTHREAD(fncall)  do {   /* run fncall if is_safe_ is true */  \
-  if (is_safe_ && fncall(&mutex_) != 0) abort();                           \
+#define SAFE_PTHREAD(fncall)  do {   /* run fncall if is_safe_ is true */                    \
+  if (is_safe_ && fncall(&mutex_) != 0) GFLAGS_NAMESPACE::gflags_fail_abort();               \
 } while (0)
 
 Mutex::Mutex() : destroy_(true) {
   SetIsSafe();
-  if (is_safe_ && pthread_mutex_init(&mutex_, NULL) != 0) abort();
+  if (is_safe_ && pthread_mutex_init(&mutex_, NULL) != 0) GFLAGS_NAMESPACE::gflags_fail_abort();
 }
 Mutex::Mutex(Mutex::LinkerInitialized) : destroy_(false) {
   SetIsSafe();
-  if (is_safe_ && pthread_mutex_init(&mutex_, NULL) != 0) abort();
+  if (is_safe_ && pthread_mutex_init(&mutex_, NULL) != 0) GFLAGS_NAMESPACE::gflags_fail_abort();
 }
 Mutex::~Mutex()       { if (destroy_) SAFE_PTHREAD(pthread_mutex_destroy); }
 void Mutex::Lock()         { SAFE_PTHREAD(pthread_mutex_lock); }
