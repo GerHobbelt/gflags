@@ -161,14 +161,14 @@ namespace GFLAGS_NAMESPACE {
 
 	// Annoying stuff for windows -- makes sure clients can import these functions
 #ifndef GOOGLE_GFLAGS_DLL_DECL
-# if defined(_WIN32) && !defined(__CYGWIN__)
+# if defined(_WIN32) && !defined(__CYGWIN__) && !defined(BUILD_MONOLITHIC)
 #   define GOOGLE_GFLAGS_DLL_DECL  __declspec(dllimport)
 # else
 #   define GOOGLE_GFLAGS_DLL_DECL
 # endif
 #endif
 
-// Install a function which will be called after LOG(FATAL).
+	// Install a function which will be called after LOG(FATAL).
 	GOOGLE_GFLAGS_DLL_DECL void InstallGFlagsFailureFunction(gflags_fail_func_t fail_func);
 
 	[[noreturn]] void gflags_fail_abort();
