@@ -1520,12 +1520,8 @@ TEST(FlagsValidator, FlagSaver) {
 }  // unnamed namespace
 
 
-#if defined(BUILD_MONOLITHIC)
-#define main(cnt, arr)      gflags_test_unittests_main(cnt, arr)
-#endif
 
-
-static int main(int argc, const char **argv) {
+static int unittests_main(int argc, const char **argv) {
 
   // Run unit tests only if called without arguments, otherwise this program
   // is used by an "external" usage test
@@ -1571,8 +1567,12 @@ static int main(int argc, const char **argv) {
 } // GFLAGS_NAMESPACE
 
 
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      gflags_test_unittests_main(cnt, arr)
+#endif
+
 int main(int argc, const char** argv)
 {
-  return GFLAGS_NAMESPACE::main(argc, argv);
+  return GFLAGS_NAMESPACE::unittests_main(argc, argv);
 }
 
