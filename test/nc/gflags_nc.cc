@@ -29,7 +29,7 @@
 
 // ---
 //
-// A negative comiple test for gflags.
+// A negative compile test for gflags.
 
 #include <gflags/gflags.h>
 
