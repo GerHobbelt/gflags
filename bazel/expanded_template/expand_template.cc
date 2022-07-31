@@ -4,11 +4,16 @@
 #include <string>
 #include <string.h>
 #include <vector>
+#include <iostream>
 
 struct Substitution {
   std::basic_regex<char> regex;
   std::string replacement;
 };
+
+#if defined(BUILD_MONOLITHIC)
+#define main     gflags_bazel_expand_template_main
+#endif
 
 // Simple app that does a regex search-and-replace on a template
 // and outputs the result.
@@ -43,6 +48,15 @@ int main(int argc, const char** argv) {
         });
       }
     }
+  }
+
+  if (template_path == nullptr) {
+	  std::cerr << "ERROR: you must specify a template file path to use via the --template commandline option.\n";
+	  return EXIT_FAILURE;
+  }
+  if (output_path == nullptr) {
+	  std::cerr << "ERROR: you must specify an output file path to use via the --output commandline option.\n";
+	  return EXIT_FAILURE;
   }
 
   // Read template.
