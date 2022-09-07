@@ -1033,7 +1033,7 @@ uint32 CommandLineFlagParser::ParseNewCommandLineFlags(int* argc, const char*** 
 
   registry_->Lock();
   for (int i = 1; i < first_nonopt; i++) {
-	  const char* arg = (*argv)[i];
+      const char* arg = (*argv)[i];
 
     // Like getopt(), we permute non-option flags to be at the end.
     if (arg[0] != '-' || arg[1] == '\0') {	// must be a program argument: "-" is an argument, not a flag
@@ -2019,39 +2019,39 @@ void ShutDownCommandLineFlags() {
 
 namespace GFLAGS_NAMESPACE {
 
-	[[noreturn]] void gflags_fail() {
-		fprintf(stderr, "Abort on Fatal Failure (gflags_fail)...\n");
-		fflush(stderr);
-		if (IsDebuggerPresent())
-			DebugBreak();
-		static int attempts = 0;
-		if (!attempts)
-		{
-			attempts++;
-			fprintf(stderr, "Throwing C++ exception (abort)\n");
-			fflush(stderr);
-			throw std::exception("aborting");
-		}
-		attempts++;
-		fprintf(stderr, "Triggering SEH exception (abort)\n");
-		fflush(stderr);
-		volatile int* pInt = 0x00000000;
-		*pInt = 20;
+    [[noreturn]] void gflags_fail() {
+        fprintf(stderr, "Abort on Fatal Failure (gflags_fail)...\n");
+        fflush(stderr);
+        if (IsDebuggerPresent())
+            DebugBreak();
+        static int attempts = 0;
+        if (!attempts)
+        {
+            attempts++;
+            fprintf(stderr, "Throwing C++ exception (abort)\n");
+            fflush(stderr);
+            throw std::exception("aborting");
+        }
+        attempts++;
+        fprintf(stderr, "Triggering SEH exception (abort)\n");
+        fflush(stderr);
+        volatile int* pInt = 0x00000000;
+        *pInt = 20;
 #if 0
-		abort();
+        abort();
 #endif
-	}
+    }
 
-	gflags_fail_func_t g_gflags_fail_func = &gflags_fail;
+    gflags_fail_func_t g_gflags_fail_func = &gflags_fail;
 
-	void InstallGFlagsFailureFunction(gflags_fail_func_t fail_func) {
-		g_gflags_fail_func = fail_func;
-	}
+    void InstallGFlagsFailureFunction(gflags_fail_func_t fail_func) {
+        g_gflags_fail_func = fail_func;
+    }
 
-	[[noreturn]] void gflags_fail_abort() {
-		g_gflags_fail_func();
-		throw std::exception("GFlags::Fail::aborting...");
-	}
+    [[noreturn]] void gflags_fail_abort() {
+        g_gflags_fail_func();
+        throw std::exception("GFlags::Fail::aborting...");
+    }
 
 }
 
