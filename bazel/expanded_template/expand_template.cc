@@ -54,12 +54,12 @@ int main(int argc, const char** argv) {
   }
 
   if (template_path == nullptr) {
-	  std::cerr << "ERROR: you must specify a template file path to use via the --template commandline option.\n";
-	  return EXIT_FAILURE;
+      std::cerr << "ERROR: you must specify a template file path to use via the --template commandline option.\n";
+      return EXIT_FAILURE;
   }
   if (output_path == nullptr) {
-	  std::cerr << "ERROR: you must specify an output file path to use via the --output commandline option.\n";
-	  return EXIT_FAILURE;
+      std::cerr << "ERROR: you must specify an output file path to use via the --output commandline option.\n";
+      return EXIT_FAILURE;
   }
 
   // Read template.

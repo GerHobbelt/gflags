@@ -1561,8 +1561,8 @@ static int unittests_main(int argc, const char **argv) {
 
   int exit_status = 0;
   if (run_tests) {
-	  fprintf(stdout, "Running the unit tests now...\n\n"); fflush(stdout);
-	  exit_status = RUN_ALL_TESTS();
+      fprintf(stdout, "Running the unit tests now...\n\n"); fflush(stdout);
+      exit_status = RUN_ALL_TESTS();
   } else fprintf(stderr, "\n\nPASS\n");
   ShutDownCommandLineFlags();
   return exit_status;
