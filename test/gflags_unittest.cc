@@ -46,6 +46,10 @@
 #endif
 #include <vector>
 #include <string>
+
+#include "monolithic_examples.h"
+
+
 TEST_INIT
 EXPECT_DEATH_INIT
 

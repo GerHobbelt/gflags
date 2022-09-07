@@ -1,6 +1,9 @@
 #include <iostream>
 #include <gflags/gflags.h>
 
+#include "monolithic_examples.h"
+
+
 DEFINE_string(message, "Hello World!", "The message to print");
 
 static bool ValidateMessage(const char* flagname, const std::string &message)

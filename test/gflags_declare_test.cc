@@ -1,5 +1,8 @@
 #include <gflags/gflags.h>
 
+#include "monolithic_examples.h"
+
+
 #if defined(BUILD_MONOLITHIC)
 DECLARE_string(message); // in gflags_delcare_test.cc
 #else

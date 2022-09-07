@@ -6,6 +6,9 @@
 #include <vector>
 #include <iostream>
 
+#include "monolithic_examples.h"
+
+
 struct Substitution {
   std::basic_regex<char> regex;
   std::string replacement;

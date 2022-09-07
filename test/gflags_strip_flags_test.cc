@@ -39,6 +39,9 @@
 
 #include <stdio.h>
 
+#include "monolithic_examples.h"
+
+
 using GFLAGS_NAMESPACE::SetUsageMessage;
 using GFLAGS_NAMESPACE::ParseCommandLineFlags;
 

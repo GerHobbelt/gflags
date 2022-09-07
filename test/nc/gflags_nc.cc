@@ -33,6 +33,9 @@
 
 #include <gflags/gflags.h>
 
+#include "monolithic_examples.h"
+
+
 #if defined(TEST_NC_SWAPPED_ARGS)
 
 DEFINE_bool(some_bool_flag,
