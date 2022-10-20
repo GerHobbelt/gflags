@@ -52,6 +52,7 @@
 #include <cstring>
 #include <cctype>
 #include <cassert>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -98,8 +99,8 @@ static void AddString(const string& s,
                       string* final_string, int* chars_in_line) {
   const int slen = static_cast<int>(s.length());
   if (*chars_in_line + 1 + slen >= kLineLength) {  // < 80 chars/line
-    *final_string += "\n      ";
-    *chars_in_line = 6;
+    *final_string += "\n        ";
+    *chars_in_line = 8;
   } else {
     *final_string += " ";
     *chars_in_line += 1;
@@ -123,8 +124,10 @@ static string PrintStringFlagsWithQuotes(const CommandLineFlagInfo& flag,
 // Goes to some trouble to make pretty line breaks.
 string DescribeOneFlag(const CommandLineFlagInfo& flag) {
   string main_part;
+  string flag_name = flag.name;
+  std::replace(flag_name.begin(), flag_name.end(), '_', '-');
   SStringPrintf(&main_part, "    --%s (%s)",
-                flag.name.c_str(),
+                flag_name.c_str(),
                 flag.description.c_str());
   const char* c_string = main_part.c_str();
   int chars_left = static_cast<int>(main_part.length());
@@ -166,8 +169,8 @@ string DescribeOneFlag(const CommandLineFlagInfo& flag) {
     }
     if (*c_string == '\0')
       break;
-    StringAppendF(&final_string, "\n      ");
-    chars_in_line = 6;
+    StringAppendF(&final_string, "\n        ");
+    chars_in_line = 8;
   }
 
   // Append data type
