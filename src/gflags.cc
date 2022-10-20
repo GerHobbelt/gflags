@@ -121,7 +121,7 @@ using namespace MUTEX_NAMESPACE;
 
 
 // Special flags, type 1: the 'recursive' flags.  They set another flag's val.
-DEFINE_string(flagfile,   "", "load flags from file");
+DEFINE_string(flag_file,   "", "load flags from file");
 DEFINE_string(fromenv,    "", "set flags from the environment"
                               " [use 'export FLAGS_flag1=value']");
 DEFINE_string(tryfromenv, "", "set flags from the environment if present");
@@ -1102,7 +1102,7 @@ FlagRegistry* FlagRegistry::GlobalRegistry() {
 //    (This is via a call to HandleCommandLineHelpFlags(), in
 //    gflags_reporting.cc.)
 //    An optional stage 3 prints out the error messages.
-//       This is a bit of a simplification.  For instance, --flagfile
+//       This is a bit of a simplification.  For instance, --flag-file
 //    is handled as soon as it's seen in stage 1, not in stage 2.
 // --------------------------------------------------------------------
 
@@ -1134,19 +1134,19 @@ class CommandLineFlagParser {
   // describing the new value that the option has been set to.  If
   // option_name does not specify a valid option name, or value is not
   // a valid value for option_name, newval is empty.  Does recursive
-  // processing for --flagfile and --fromenv.  Returns the new value
+  // processing for --flag_file and --fromenv.  Returns the new value
   // if everything went ok, or empty-string if not.  (Actually, the
-  // return-string could hold many flag/value pairs due to --flagfile.)
+  // return-string could hold many flag/value pairs due to --flag-file.)
   // NB: Must have called registry_->Lock() before calling this function.
   string ProcessSingleOptionLocked(CommandLineFlag* flag,
                                    const char* value,
                                    FlagSettingMode set_mode);
 
   // Set a whole batch of command line options as specified by contentdata,
-  // which is in flagfile format (and probably has been read from a flagfile).
+  // which is in flag file format (and probably has been read from a flag file).
   // Returns the new value if everything went ok, or empty-string if
   // not.  (Actually, the return-string could hold many flag/value
-  // pairs due to --flagfile.)
+  // pairs due to --flag-file.)
   // NB: Must have called registry_->Lock() before calling this function.
   string ProcessOptionsFromStringLocked(const string& contentdata,
                                         FlagSettingMode set_mode);
@@ -1374,11 +1374,11 @@ string CommandLineFlagParser::ProcessSingleOptionLocked(
     return "";
   }
 
-  // The recursive flags, --flagfile and --fromenv and --tryfromenv,
+  // The recursive flags, --flag_file and --fromenv and --tryfromenv,
   // must be dealt with as soon as they're seen.  They will emit
   // messages of their own.
-  if (strcmp(flag->name(), "flagfile") == 0) {
-    msg += ProcessFlagfileLocked(FLAGS_flagfile, set_mode);
+  if (strcmp(flag->name(), "flag_file") == 0) {
+    msg += ProcessFlagfileLocked(FLAGS_flag_file, set_mode);
 
   } else if (strcmp(flag->name(), "fromenv") == 0) {
     // last arg indicates envval-not-found is fatal (unlike in --tryfromenv)
@@ -1470,23 +1470,23 @@ string trim(const string& str, const string& whitespace = " \t")
 string CommandLineFlagParser::ProcessOptionsFromStringLocked(
     const string& contentdata, FlagSettingMode set_mode) {
   string retval;
-  const char* flagfile_contents = contentdata.c_str();
+  const char* flag_file_contents = contentdata.c_str();
   bool flags_are_relevant = true;   // set to false when filenames don't match
   bool in_filename_section = false;
 
-  const char* line_end = flagfile_contents;
+  const char* line_end = flag_file_contents;
   // We read this file a line at a time.
-  for (; line_end; flagfile_contents = line_end + 1) {
-    while (*flagfile_contents && isspace(*flagfile_contents))
-      ++flagfile_contents;
+  for (; line_end; flag_file_contents = line_end + 1) {
+    while (*flag_file_contents && isspace(*flag_file_contents))
+      ++flag_file_contents;
     // Windows uses "\r\n"
-    line_end = strchr(flagfile_contents, '\r');
+    line_end = strchr(flag_file_contents, '\r');
     if (line_end == NULL)
-        line_end = strchr(flagfile_contents, '\n');
+        line_end = strchr(flag_file_contents, '\n');
 
-    size_t len = line_end ? line_end - flagfile_contents
-                          : strlen(flagfile_contents);
-    string line(flagfile_contents, len);
+    size_t len = line_end ? line_end - flag_file_contents
+                          : strlen(flag_file_contents);
+    string line(flag_file_contents, len);
 
     // Remove leading and trailing spaces
     line = trim(line);
@@ -1513,7 +1513,7 @@ string CommandLineFlagParser::ProcessOptionsFromStringLocked(
       CommandLineFlag* flag = registry_->SplitArgumentLocked(name_and_val,
                                                              &key, &value,
                                                              &error_message);
-      // By API, errors parsing flagfile lines are silently ignored.
+      // By API, errors parsing flag file lines are silently ignored.
       if (flag == NULL) {
         // "WARNING: flagname '" + key + "' not found\n"
       } else if (value == NULL) {
@@ -1965,11 +1965,11 @@ FlagSaver::~FlagSaver() {
 //    These are mostly-deprecated routines that stick the
 //    commandline flags into a file/string and read them back
 //    out again.  I can see a use for CommandlineFlagsIntoString,
-//    for creating a flagfile, but the rest don't seem that useful
+//    for creating a flag file, but the rest don't seem that useful
 //    -- some, I think, are a poor-man's attempt at FlagSaver --
 //    and are included only until we can delete them from callers.
-//    Note they don't save --flagfile flags (though they do save
-//    the result of having called the flagfile, of course).
+//    Note they don't save --flag-file flags (though they do save
+//    the result of having called the flag file, of course).
 // --------------------------------------------------------------------
 
 static string TheseCommandlineFlagsIntoString(
@@ -2000,7 +2000,7 @@ string CommandlineFlagsIntoString() {
   return TheseCommandlineFlagsIntoString(sorted_flags);
 }
 
-bool ReadFlagsFromString(const string& flagfilecontents,
+bool ReadFlagsFromString(const string& flag_file_contents,
                          const char* /*prog_name*/,  // TODO(csilvers): nix this
                          bool errors_are_fatal) {
   FlagRegistry* const registry = FlagRegistry::GlobalRegistry();
@@ -2009,7 +2009,7 @@ bool ReadFlagsFromString(const string& flagfilecontents,
 
   CommandLineFlagParser parser(registry);
   registry->Lock();
-  parser.ProcessOptionsFromStringLocked(flagfilecontents, SET_FLAGS_VALUE);
+  parser.ProcessOptionsFromStringLocked(flag_file_contents, SET_FLAGS_VALUE);
   registry->Unlock();
   // Should we handle --help and such when reading flags from a string?  Sure.
   HandleCommandLineHelpFlags();
@@ -2035,10 +2035,10 @@ bool AppendFlagsIntoFile(const string& filename, const char *prog_name) {
 
   vector<CommandLineFlagInfo> flags;
   GetAllFlags(&flags);
-  // But we don't want --flagfile, which leads to weird recursion issues
+  // But we don't want --flag-file, which leads to weird recursion issues
   vector<CommandLineFlagInfo>::iterator i;
   for (i = flags.begin(); i != flags.end(); ++i) {
-    if (strcmp(i->name.c_str(), "flagfile") == 0) {
+    if (strcmp(i->name.c_str(), "flag_file") == 0) {
       flags.erase(i);
       break;
     }
@@ -2190,13 +2190,13 @@ static uint32 ParseCommandLineFlagsInternal(int* argc, const char*** argv,
   FlagRegistry* const registry = FlagRegistry::GlobalRegistry();
   CommandLineFlagParser parser(registry);
 
-  // When we parse the commandline flags, we'll handle --flagfile,
+  // When we parse the commandline flags, we'll handle --flag-file,
   // --tryfromenv, etc. as we see them (since flag-evaluation order
   // may be important).  But sometimes apps set FLAGS_tryfromenv/etc.
   // manually before calling ParseCommandLineFlags.  We want to evaluate
   // those too, as if they were the first flags on the commandline.
   registry->Lock();
-  parser.ProcessFlagfileLocked(FLAGS_flagfile, SET_FLAGS_VALUE);
+  parser.ProcessFlagfileLocked(FLAGS_flag_file, SET_FLAGS_VALUE);
   // Last arg here indicates whether flag-not-found is a fatal error or not
   parser.ProcessFromenvLocked(FLAGS_fromenv, SET_FLAGS_VALUE, true);
   parser.ProcessFromenvLocked(FLAGS_tryfromenv, SET_FLAGS_VALUE, false);
