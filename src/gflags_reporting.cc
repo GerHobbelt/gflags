@@ -34,7 +34,7 @@
 // This file contains code for handling the 'reporting' flags.  These
 // are flags that, when present, cause the program to report some
 // information and then exit.  --help and --version are the canonical
-// reporting flags, but we also have flags like --helpxml, etc.
+// reporting flags, but we also have flags like --help-xml, etc.
 //
 // There's only one function that's meant to be called externally:
 // HandleCommandLineHelpFlags().  (Well, actually, ShowUsageWithFlags(),
@@ -73,7 +73,7 @@ DEFINE_bool  (helpshort,   false, "show help on only the main module for this pr
 DEFINE_string(helpon,      "",    "show help on the modules named by this flag value");
 DEFINE_string(helpmatch,   "",    "show help on modules whose name contains the specified substr");
 DEFINE_bool  (helppackage, false, "show help on all modules in the main package");
-DEFINE_bool  (helpxml,     false, "produce an xml version of help");
+DEFINE_bool  (help_xml,     false, "produce an xml version of help");
 DEFINE_bool  (version,     false, "show version and build info and exit");
 
 
@@ -435,7 +435,7 @@ void HandleCommandLineHelpFlags() {
     }
     gflags_exitfunc(1);
 
-  } else if (FLAGS_helpxml) {
+  } else if (FLAGS_help_xml) {
     ShowXMLOfFlags(progname);
     gflags_exitfunc(1);
 
