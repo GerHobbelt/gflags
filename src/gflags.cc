@@ -1267,6 +1267,18 @@ bool CommandLineFlagParser::ReportErrors() {
   return found_error;
 }
 
+string trim(const string& str, const string& whitespace = " \t")
+{
+    const auto strBegin = str.find_first_not_of(whitespace);
+    if (strBegin == std::string::npos)
+        return ""; // no content
+
+    const auto strEnd = str.find_last_not_of(whitespace);
+    const auto strRange = strEnd - strBegin + 1;
+
+    return str.substr(strBegin, strRange);
+}
+
 string CommandLineFlagParser::ProcessOptionsFromStringLocked(
     const string& contentdata, FlagSettingMode set_mode) {
   string retval;
@@ -1288,12 +1300,8 @@ string CommandLineFlagParser::ProcessOptionsFromStringLocked(
                           : strlen(flagfile_contents);
     string line(flagfile_contents, len);
 
-    //Remove trailing spaces
-    while(isspace(line.data()[len-1]))
-    {
-        line = line.substr(0, line.length()-1);
-        len = line.length();
-    }
+    // Remove leading and trailing spaces
+    line = trim(line);
     
     // Each line can be one of four things:
     // 1) A comment line -- we skip it
