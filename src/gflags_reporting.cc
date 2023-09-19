@@ -48,10 +48,10 @@
 // called after all flag-values have been assigned, that is, after
 // parsing the command-line.
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -123,7 +123,7 @@ string DescribeOneFlag(const CommandLineFlagInfo& flag) {
                 flag.description.c_str());
   const char* c_string = main_part.c_str();
   int chars_left = static_cast<int>(main_part.length());
-  string final_string = "";
+  string final_string;
   int chars_in_line = 0;  // how many chars in current line so far?
   while (1) {
     assert(static_cast<size_t>(chars_left)
@@ -275,9 +275,9 @@ static void ShowUsageWithFlagsMatching(const char *argv0,
        ++flag) {
     if (substrings.empty() ||
         FileMatchesSubstring(flag->filename, substrings)) {
+      found_match = true;     // this flag passed the match!
       // If the flag has been stripped, pretend that it doesn't exist.
       if (flag->description == kStrippedFlagHelp) continue;
-      found_match = true;     // this flag passed the match!
       if (flag->filename != last_filename) {                      // new file
         if (Dirname(flag->filename) != Dirname(last_filename)) {  // new dir!
           if (!first_directory)
@@ -296,10 +296,10 @@ static void ShowUsageWithFlagsMatching(const char *argv0,
   }
 }
 
-void ShowUsageWithFlagsRestrict(const char *argv0, const char *restrict) {
+void ShowUsageWithFlagsRestrict(const char *argv0, const char *restrict_) {
   vector<string> substrings;
-  if (restrict != NULL && *restrict != '\0') {
-    substrings.push_back(restrict);
+  if (restrict_ != NULL && *restrict_ != '\0') {
+    substrings.push_back(restrict_);
   }
   ShowUsageWithFlagsMatching(argv0, substrings);
 }
@@ -353,7 +353,7 @@ static void ShowVersion() {
 
 static void AppendPrognameStrings(vector<string>* substrings,
                                   const char* progname) {
-  string r("");
+  string r;
   r += PATH_SEPARATOR;
   r += progname;
   substrings->push_back(r + ".");
@@ -389,8 +389,8 @@ void HandleCommandLineHelpFlags() {
     gflags_exitfunc(1);
 
   } else if (!FLAGS_helpon.empty()) {
-    string restrict = PATH_SEPARATOR + FLAGS_helpon + ".";
-    ShowUsageWithFlagsRestrict(progname, restrict.c_str());
+    string restrict_ = PATH_SEPARATOR + FLAGS_helpon + ".";
+    ShowUsageWithFlagsRestrict(progname, restrict_.c_str());
     gflags_exitfunc(1);
 
   } else if (!FLAGS_helpmatch.empty()) {

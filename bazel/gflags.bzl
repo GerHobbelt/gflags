@@ -1,46 +1,50 @@
+load("//bazel/expanded_template:expanded_template.bzl", "expanded_template")
+
 # ------------------------------------------------------------------------------
 # Add native rules to configure source files
-def gflags_sources(namespace=["google", "gflags"]):
-    native.genrule(
+def gflags_sources(namespace = ["google", "gflags"]):
+    expanded_template(
         name = "gflags_declare_h",
-        srcs = ["src/gflags_declare.h.in"],
-        outs = ["gflags_declare.h"],
-        cmd  = ("awk '{ " +
-                "gsub(/@GFLAGS_NAMESPACE@/, \"" + namespace[0] + "\"); " +
-                "gsub(/@(HAVE_STDINT_H|HAVE_SYS_TYPES_H|HAVE_INTTYPES_H|GFLAGS_INTTYPES_FORMAT_C99)@/, \"1\"); " +
-                "gsub(/@([A-Z0-9_]+)@/, \"0\"); " +
-                "print; }' $(<) > $(@)")
+        template = "src/gflags_declare.h.in",
+        out = "gflags_declare.h",
+        substitutions = {
+            "@GFLAGS_NAMESPACE@": namespace[0],
+            "@(HAVE_STDINT_H|HAVE_SYS_TYPES_H|HAVE_INTTYPES_H|GFLAGS_INTTYPES_FORMAT_C99)@": "1",
+            "@([A-Z0-9_]+)@": "0",
+        },
     )
     gflags_ns_h_files = []
     for ns in namespace[1:]:
         gflags_ns_h_file = "gflags_{}.h".format(ns)
-        native.genrule(
-            name = gflags_ns_h_file.replace('.', '_'),
-            srcs = ["src/gflags_ns.h.in"],
-            outs = [gflags_ns_h_file],
-            cmd  = ("awk '{ " +
-                    "gsub(/@ns@/, \"" + ns + "\"); " +
-                    "gsub(/@NS@/, \"" + ns.upper() + "\"); " +
-                    "print; }' $(<) > $(@)")
+        expanded_template(
+            name = gflags_ns_h_file.replace(".", "_"),
+            template = "src/gflags_ns.h.in",
+            out = gflags_ns_h_file,
+            substitutions = {
+                "@ns@": ns,
+                "@NS@": ns.upper(),
+            },
         )
         gflags_ns_h_files.append(gflags_ns_h_file)
-    native.genrule(
+    expanded_template(
         name = "gflags_h",
-        srcs = ["src/gflags.h.in"],
-        outs = ["gflags.h"],
-        cmd  = ("awk '{ " +
-                "gsub(/@GFLAGS_ATTRIBUTE_UNUSED@/, \"\"); " +
-                "gsub(/@INCLUDE_GFLAGS_NS_H@/, \"" + '\n'.join(["#include \\\"gflags/{}\\\"".format(hdr) for hdr in gflags_ns_h_files]) + "\"); " +
-                "print; }' $(<) > $(@)")
+        template = "src/gflags.h.in",
+        out = "gflags.h",
+        substitutions = {
+            "@GFLAGS_ATTRIBUTE_UNUSED@": "",
+            "@INCLUDE_GFLAGS_NS_H@": "\n".join(["#include \"gflags/{}\"".format(hdr) for hdr in gflags_ns_h_files]),
+        },
     )
-    native.genrule(
+    expanded_template(
         name = "gflags_completions_h",
-        srcs = ["src/gflags_completions.h.in"],
-        outs = ["gflags_completions.h"],
-        cmd  = "awk '{ gsub(/@GFLAGS_NAMESPACE@/, \"" + namespace[0] + "\"); print; }' $(<) > $(@)"
+        template = "src/gflags_completions.h.in",
+        out = "gflags_completions.h",
+        substitutions = {
+            "@GFLAGS_NAMESPACE@": namespace[0],
+        },
     )
     hdrs = [":gflags_h", ":gflags_declare_h", ":gflags_completions_h"]
-    hdrs.extend([':' + hdr.replace('.', '_') for hdr in gflags_ns_h_files])
+    hdrs.extend([":" + hdr.replace(".", "_") for hdr in gflags_ns_h_files])
     srcs = [
         "src/config.h",
         "src/gflags.cc",
@@ -59,7 +63,7 @@ def gflags_sources(namespace=["google", "gflags"]):
 
 # ------------------------------------------------------------------------------
 # Add native rule to build gflags library
-def gflags_library(hdrs=[], srcs=[], threads=1):
+def gflags_library(hdrs = [], srcs = [], threads = 1):
     name = "gflags"
     copts = [
         "-DGFLAGS_BAZEL_BUILD",
@@ -86,6 +90,7 @@ def gflags_library(hdrs=[], srcs=[], threads=1):
     linkopts = []
     if threads:
         linkopts += select({
+            "//:android": [],
             "//:x64_windows": [],
             "//conditions:default": ["-lpthread"],
         })
@@ -93,11 +98,11 @@ def gflags_library(hdrs=[], srcs=[], threads=1):
         name += "_nothreads"
         copts += ["-DNO_THREADS"]
     native.cc_library(
-        name       = name,
-        hdrs       = hdrs,
-        srcs       = srcs,
-        copts      = copts,
-        linkopts   = linkopts,
+        name = name,
+        hdrs = hdrs,
+        srcs = srcs,
+        copts = copts,
+        linkopts = linkopts,
         visibility = ["//visibility:public"],
-        include_prefix = 'gflags'
+        include_prefix = "gflags",
     )
