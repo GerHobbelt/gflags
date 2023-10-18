@@ -267,7 +267,7 @@ static bool FileMatchesSubstring(const string& filename,
 // by '--help' and its variants.
 static void ShowUsageWithFlagsMatching(const char *argv0,
                                        const vector<string> &substrings) {
-  fprintf(stdout, "%s: %s\n", Basename(argv0), ProgramUsage());
+  gflags_stderr_printf("%s: %s\n", Basename(argv0), ProgramUsage());
 
   vector<CommandLineFlagInfo> flags;
   GetAllFlags(&flags);           // flags are sorted by filename, then flagname
@@ -286,20 +286,20 @@ static void ShowUsageWithFlagsMatching(const char *argv0,
       if (flag->filename != last_filename) {                      // new file
         if (Dirname(flag->filename) != Dirname(last_filename)) {  // new dir!
           if (!first_directory)
-            fprintf(stdout, "\n\n");   // put blank lines between directories
+            gflags_stderr_printf("\n\n");   // put blank lines between directories
           first_directory = false;
         }
 #ifndef STRIP_INTERNAL_FLAG_HELP
-        fprintf(stdout, "\n  Flags from %s:\n", flag->filename.c_str());
+        gflags_stderr_printf("\n  Flags from %s:\n", flag->filename.c_str());
 #endif  // STRIP_INTERNAL_FLAG_HELP
         last_filename = flag->filename;
       }
       // Now print this flag
-      fprintf(stdout, "%s", DescribeOneFlag(*flag).c_str());
+      gflags_stderr_printf("%s", DescribeOneFlag(*flag).c_str());
     }
   }
   if (!found_match && !substrings.empty()) {
-    fprintf(stdout, "\n  No modules matched: use -help\n");
+    gflags_stderr_printf("\n  No modules matched: use -help\n");
   }
 }
 
@@ -338,6 +338,7 @@ static void ShowXMLOfFlags(const char *prog_name) {
   }
   // The end of the document
   fprintf(stdout, "</AllFlags>\n");
+  fflush(stdout);
 }
 
 // --------------------------------------------------------------------
@@ -356,6 +357,7 @@ static void ShowVersion() {
 # if !defined(NDEBUG)
   fprintf(stdout, "Debug build (NDEBUG not #defined)\n");
 # endif
+  fflush(stdout);
 }
 
 static void AppendPrognameStrings(vector<string>* substrings,

@@ -141,7 +141,7 @@ using std::string;
 using std::vector;
 
 // This is used by the unittest to test error-exit code
-void GFLAGS_DLL_DECL (*gflags_exitfunc)(int) = &exit;  // from stdlib.h
+void GFLAGS_DLL_DECL (*gflags_exitfunc)(int) = &gflags_std_exit;
 
 
 // The help message indicating that the commandline flag has been
@@ -181,7 +181,8 @@ static void ReportError(DieWhenReporting should_die, const char* format, ...) {
   vfprintf(stderr, format, ap);
   va_end(ap);
   fflush(stderr);   // should be unnecessary, but cygwin's rxvt buffers stderr
-  if (should_die == DIE) gflags_exitfunc(1);
+  if (should_die == DIE) 
+	gflags_exitfunc(1);
 }
 
 
@@ -1015,17 +1016,22 @@ static void ParseFlagList(const char* value, vector<string>* flags) {
 // can do all the I/O in one place and not worry about it everywhere.
 // Plus, it's convenient to have the whole file contents at hand.
 // Adds a newline at the end of the file.
-#define PFATAL(s)  do { perror(s); gflags_exitfunc(1); } while (0)
+static void PFATAL(const char *s) { 
+  perror(s); 
+  gflags_exitfunc(1); 
+}
 
 static string ReadFileIntoString(const char* filename) {
   const int kBufSize = 8092;
   char buffer[kBufSize];
   string s;
   FILE* fp;
-  if ((errno = SafeFOpen(&fp, filename, "r")) != 0) PFATAL(filename);
+  if ((errno = SafeFOpen(&fp, filename, "r")) != 0) 
+	PFATAL(filename);
   size_t n;
   while ( (n=fread(buffer, 1, kBufSize, fp)) > 0 ) {
-    if (ferror(fp))  PFATAL(filename);
+    if (ferror(fp))  
+	  PFATAL(filename);
     s.append(buffer, n);
   }
   fclose(fp);
@@ -1361,8 +1367,8 @@ string CommandLineFlagParser::ProcessOptionsFromStringLocked(
             || fnmatch(glob.c_str(), ProgramInvocationName(),      FNM_PATHNAME) == 0
             || fnmatch(glob.c_str(), ProgramInvocationShortName(), FNM_PATHNAME) == 0
 #elif defined(HAVE_SHLWAPI_H)
-            || PathMatchSpecA(glob.c_str(), ProgramInvocationName())
-            || PathMatchSpecA(glob.c_str(), ProgramInvocationShortName())
+            || PathMatchSpecA(ProgramInvocationName(), glob.c_str())
+            || PathMatchSpecA(ProgramInvocationShortName(), glob.c_str())
 #endif
             ) {
           flags_are_relevant = true;
@@ -1564,11 +1570,25 @@ const char* ProgramInvocationName() {             // like the GNU libc fn
   return GetArgv0();
 }
 const char* ProgramInvocationShortName() {        // like the GNU libc fn
-  size_t pos = argv0.rfind('/');
 #ifdef OS_WINDOWS
-  if (pos == string::npos) pos = argv0.rfind('\\');
-#endif
+  const char* app = argv0.c_str();
+  const char* pos1 = strrchr(app, '/');
+  const char* pos2 = strrchr(app, '\\');
+  if (pos1 == nullptr)
+	pos1 = app;
+  else
+	pos1++;
+  if (pos2 == nullptr)
+	  pos2 = app;
+  else
+	  pos2++;
+  if (pos2 > pos1)
+	return pos2;
+  return pos1;
+#else
+  size_t pos = argv0.rfind('/');
   return (pos == string::npos ? argv0.c_str() : (argv0.c_str() + pos + 1));
+#endif
 }
 
 void SetUsageMessage(const string& usage) {
@@ -1651,7 +1671,7 @@ CommandLineFlagInfo GetCommandLineFlagInfoOrDie(const char* name) {
   CommandLineFlagInfo info;
   if (!GetCommandLineFlagInfo(name, &info)) {
     fprintf(stderr, "FATAL ERROR: flag name '%s' doesn't exist\n", name);
-    gflags_exitfunc(1);    // almost certainly gflags_exitfunc()
+    gflags_exitfunc(1);    // almost certainly exit()
   }
   return info;
 }

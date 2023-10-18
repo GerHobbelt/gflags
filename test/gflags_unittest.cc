@@ -288,7 +288,7 @@ TEST(FlagTypes, FlagTypes) {
   AssertIsType<string>(FLAGS_test_string);
 }
 
-#ifdef GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST
 // Death tests for "help" options.
 //
 // The help system automatically calls gflags_exitfunc(1) when you specify any of
@@ -725,7 +725,7 @@ TEST(FromEnvTest, LegalValues) {
   EXPECT_STREQ("unknown", StringFromEnv("STRING_VAL_UNKNOWN", "unknown"));
 }
 
-#ifdef GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST
 // Tests that the FooFromEnv dies on parse-error
 TEST(FromEnvDeathTest, IllegalValues) {
   setenv("BOOL_BAD1", "so true!", 1);
@@ -1111,7 +1111,7 @@ TEST(GetCommandLineFlagInfoOrDieTest, FlagExistsAndWasAssigned) {
   EXPECT_EQ(&FLAGS_test_bool, info.flag_ptr);
 }
 
-#ifdef GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST
 TEST(GetCommandLineFlagInfoOrDieDeathTest, FlagDoesNotExist) {
   EXPECT_DEATH(GetCommandLineFlagInfoOrDie("test_int3210"),
                ".*: flag test_int3210 does not exist");
@@ -1318,7 +1318,7 @@ TEST(ParseCommandLineFlagsAndDashArgs, OneDashArg) {
   EXPECT_EQ(0, ParseTestFlag(false, arraysize(argv) - 1, argv));
 }
 
-#ifdef GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST
 TEST(ParseCommandLineFlagsUnknownFlagDeathTest,
      FlagIsCompletelyUnknown) {
   const char* argv[] = {
@@ -1382,7 +1382,7 @@ TEST(ParseCommandLineFlagsWrongFields,
 static bool ValidateTestFlagIs5(const char* flagname, int32 flagval) {
   if (flagval == 5)
     return true;
-  printf("%s isn't 5!\n", flagname);
+  gflags_stderr_printf("%s isn't 5!\n", flagname);
   return false;
 }
 
@@ -1423,7 +1423,7 @@ TEST(FlagsValidator, ValidFlagViaSetValue) {
   EXPECT_TRUE(RegisterFlagValidator(&FLAGS_test_flag, NULL));
 }
 
-#ifdef GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST
 TEST(FlagsValidatorDeathTest, InvalidFlagViaArgv) {
   const char* argv[] = {
     "my_test",
@@ -1459,7 +1459,7 @@ TEST(FlagsValidator, InvalidFlagViaSetValue) {
   EXPECT_TRUE(RegisterFlagValidator(&FLAGS_test_flag, NULL));
 }
 
-#ifdef GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST
 TEST(FlagsValidatorDeathTest, InvalidFlagNeverSet) {
   // If a flag keeps its default value, and that default value is
   // invalid, we should die at argv-parse time.
@@ -1561,14 +1561,38 @@ static int unittests_main(int argc, const char **argv) {
 
   int exit_status = 0;
   if (run_tests) {
-      fprintf(stdout, "Running the unit tests now...\n\n"); fflush(stdout);
-      exit_status = RUN_ALL_TESTS();
-  } else fprintf(stderr, "\n\nPASS\n");
+	gflags_stderr_printf("Running the unit tests now...\n\n");
+    exit_status = RUN_ALL_TESTS();
+  } else {
+    gflags_stderr_printf("\n\nPASS\n");
+  }
   ShutDownCommandLineFlags();
   return exit_status;
 }
 
 } // GFLAGS_NAMESPACE
+
+
+namespace GFLAGS_NAMESPACE {
+
+std::ostream & gflags_stderr_ostream() {
+	return std::cerr;
+}
+
+void gflags_stderr_printf(const char *msg, ...) {
+	va_list args;
+	va_start(args, msg);
+	vfprintf(stderr, msg, args);
+	va_end(args);
+	fflush(stderr);
+}
+
+void gflags_std_exit(int retval) {
+	::std::exit(retval);
+}
+
+}		// namespace GFLAGS_NAMESPACE
+
 
 
 #if defined(BUILD_MONOLITHIC)
