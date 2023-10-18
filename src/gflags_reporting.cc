@@ -354,9 +354,6 @@ static void ShowVersion() {
   } else {
     fprintf(stdout, "%s\n", ProgramInvocationShortName());
   }
-# if !defined(NDEBUG)
-  fprintf(stdout, "Debug build (NDEBUG not #defined)\n");
-# endif
   fflush(stdout);
 }
 
