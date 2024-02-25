@@ -113,6 +113,7 @@
 #include <string>
 #include <utility>     // for pair<>
 #include <vector>
+#include <atomic>
 
 #include "mutex.h"
 #include "util.h"
@@ -215,7 +216,6 @@ class FlagValue {
     FV_ATOMIC_INT64 = 10,
     FV_ATOMIC_UINT64 = 11,
     FV_ATOMIC_DOUBLE = 12,
-    FV_ATOMIC_STRING = 13,
     FV_MAX_INDEX = 13,
   };
 
@@ -274,13 +274,12 @@ DEFINE_FLAG_TRAITS(int64, FV_INT64);
 DEFINE_FLAG_TRAITS(uint64, FV_UINT64);
 DEFINE_FLAG_TRAITS(double, FV_DOUBLE);
 DEFINE_FLAG_TRAITS(std::string, FV_STRING);
-DEFINE_FLAG_TRAITS(atomic_bool, FV_ATOMIC_BOOL);
-DEFINE_FLAG_TRAITS(atomic_int32, FV_ATOMIC_INT32);
-DEFINE_FLAG_TRAITS(atomic_uint32, FV_ATOMIC_UINT32);
-DEFINE_FLAG_TRAITS(atomic_int64, FV_ATOMIC_INT64);
-DEFINE_FLAG_TRAITS(atomic_uint64, FV_ATOMIC_UINT64);
-DEFINE_FLAG_TRAITS(atomic_double, FV_ATOMIC_DOUBLE);
-DEFINE_FLAG_TRAITS(atomic_string, FV_ATOMIC_STRING);
+DEFINE_FLAG_TRAITS(std::atomic_bool, FV_ATOMIC_BOOL);
+DEFINE_FLAG_TRAITS(std::atomic_int32_t, FV_ATOMIC_INT32);
+DEFINE_FLAG_TRAITS(std::atomic_uint32_t, FV_ATOMIC_UINT32);
+DEFINE_FLAG_TRAITS(std::atomic_int64_t, FV_ATOMIC_INT64);
+DEFINE_FLAG_TRAITS(std::atomic_uint64_t, FV_ATOMIC_UINT64);
+DEFINE_FLAG_TRAITS(std::atomic<double>, FV_ATOMIC_DOUBLE);
 
 #undef DEFINE_FLAG_TRAITS
 
@@ -312,25 +311,22 @@ FlagValue::~FlagValue() {
     case FV_DOUBLE: delete reinterpret_cast<double*>(value_buffer_); break;
     case FV_STRING: delete reinterpret_cast<string*>(value_buffer_); break;
     case FV_ATOMIC_BOOL:
-      delete reinterpret_cast<atomic_bool*>(value_buffer_);
+      delete reinterpret_cast<std::atomic_bool*>(value_buffer_);
       break;
     case FV_ATOMIC_INT32:
-      delete reinterpret_cast<atomic_int32*>(value_buffer_);
+      delete reinterpret_cast<std::atomic_int32_t*>(value_buffer_);
       break;
     case FV_ATOMIC_UINT32:
-      delete reinterpret_cast<atomic_uint32*>(value_buffer_);
+      delete reinterpret_cast<std::atomic_uint32_t*>(value_buffer_);
       break;
     case FV_ATOMIC_INT64:
-      delete reinterpret_cast<atomic_int64*>(value_buffer_);
+      delete reinterpret_cast<std::atomic_int64_t*>(value_buffer_);
       break;
     case FV_ATOMIC_UINT64:
-      delete reinterpret_cast<atomic_uint64*>(value_buffer_);
+      delete reinterpret_cast<std::atomic_uint64_t*>(value_buffer_);
       break;
     case FV_ATOMIC_DOUBLE:
-      delete reinterpret_cast<atomic_double*>(value_buffer_);
-      break;
-    case FV_ATOMIC_STRING:
-      delete reinterpret_cast<atomic_string*>(value_buffer_);
+      delete reinterpret_cast<std::atomic<double>*>(value_buffer_);
       break;
   }
 }
@@ -345,14 +341,14 @@ bool FlagValue::ParseFrom(const char* value) {
         if (type_ == FV_BOOL) {
           SET_VALUE_AS(bool, true);
         } else {
-          SET_VALUE_AS(atomic_bool, true);
+          SET_VALUE_AS(std::atomic_bool, true);
         }
         return true;
       } else if (strcasecmp(value, kFalse[i]) == 0) {
         if (type_ == FV_BOOL) {
           SET_VALUE_AS(bool, false);
         } else {
-          SET_VALUE_AS(atomic_bool, false);
+          SET_VALUE_AS(std::atomic_bool, false);
         }
         return true;
       }
@@ -361,9 +357,6 @@ bool FlagValue::ParseFrom(const char* value) {
 
   } else if (type_ == FV_STRING) {
     SET_VALUE_AS(string, value);
-    return true;
-  } else if (type_ == FV_ATOMIC_STRING) {
-    SET_VALUE_AS(atomic_string, value);
     return true;
   }
 
@@ -388,7 +381,7 @@ bool FlagValue::ParseFrom(const char* value) {
       if (type_ == FV_INT32) {
         SET_VALUE_AS(int32, static_cast<int32>(r));
       } else {
-        SET_VALUE_AS(atomic_int32, static_cast<int32>(r));
+        SET_VALUE_AS(std::atomic_int32_t, static_cast<int32>(r));
       }
       return true;
     }
@@ -403,7 +396,7 @@ bool FlagValue::ParseFrom(const char* value) {
       if (type_ == FV_UINT32) {
       SET_VALUE_AS(uint32, static_cast<uint32>(r));
       } else {
-      SET_VALUE_AS(atomic_uint32, static_cast<uint32>(r));
+      SET_VALUE_AS(std::atomic_uint32_t, static_cast<uint32>(r));
       }
       return true;
     }
@@ -415,7 +408,7 @@ bool FlagValue::ParseFrom(const char* value) {
       if (type_ == FV_INT64) {
         SET_VALUE_AS(int64, r);
       } else {
-        SET_VALUE_AS(atomic_int64, r);
+        SET_VALUE_AS(std::atomic_int64_t, r);
       }
       return true;
     }
@@ -429,7 +422,7 @@ bool FlagValue::ParseFrom(const char* value) {
       if (type_ == FV_UINT64) {
         SET_VALUE_AS(uint64, r);
       } else {
-        SET_VALUE_AS(atomic_uint64, r);
+        SET_VALUE_AS(std::atomic_uint64_t, r);
       }
       return true;
     }
@@ -441,7 +434,7 @@ bool FlagValue::ParseFrom(const char* value) {
       if (type_ == FV_DOUBLE) {
         SET_VALUE_AS(double, r);
       } else {
-        SET_VALUE_AS(atomic_double, r);
+        SET_VALUE_AS(std::atomic<double>, r);
       }
       return true;
     }
@@ -475,24 +468,22 @@ string FlagValue::ToString() const {
     case FV_STRING:
       return VALUE_AS(string);
     case FV_ATOMIC_BOOL:
-      return VALUE_AS(atomic_bool) ? "true" : "false";
+      return VALUE_AS(std::atomic_bool) ? "true" : "false";
     case FV_ATOMIC_INT32:
-      snprintf(intbuf, sizeof(intbuf), "%" PRId32, (int32)VALUE_AS(atomic_int32));
+      snprintf(intbuf, sizeof(intbuf), "%" PRId32, (int32)VALUE_AS(std::atomic_int32_t));
       return intbuf;
     case FV_ATOMIC_UINT32:
-      snprintf(intbuf, sizeof(intbuf), "%" PRIu32, (uint32)VALUE_AS(atomic_uint32));
+      snprintf(intbuf, sizeof(intbuf), "%" PRIu32, (uint32)VALUE_AS(std::atomic_uint32_t));
       return intbuf;
     case FV_ATOMIC_INT64:
-      snprintf(intbuf, sizeof(intbuf), "%" PRId64, (int64)VALUE_AS(atomic_int64));
+      snprintf(intbuf, sizeof(intbuf), "%" PRId64, (int64)VALUE_AS(std::atomic_int64_t));
       return intbuf;
     case FV_ATOMIC_UINT64:
-      snprintf(intbuf, sizeof(intbuf), "%" PRIu64, (uint64)VALUE_AS(atomic_uint64));
+      snprintf(intbuf, sizeof(intbuf), "%" PRIu64, (uint64)VALUE_AS(std::atomic_uint64_t));
       return intbuf;
     case FV_ATOMIC_DOUBLE:
-      snprintf(intbuf, sizeof(intbuf), "%.17g", (double)VALUE_AS(atomic_double));
+      snprintf(intbuf, sizeof(intbuf), "%.17g", (double)VALUE_AS(std::atomic<double>));
       return intbuf;
-    case FV_ATOMIC_STRING:
-      return VALUE_AS(atomic_string);
     default:
       assert(false);
       return "";  // unknown type
@@ -525,25 +516,22 @@ bool FlagValue::Validate(const char* flagname,
           validate_fn_proto)(flagname, VALUE_AS(string));
     case FV_ATOMIC_BOOL:
       return reinterpret_cast<bool (*)(const char*, bool)>(
-          validate_fn_proto)(flagname, VALUE_AS(atomic_bool));
+          validate_fn_proto)(flagname, VALUE_AS(std::atomic_bool));
     case FV_ATOMIC_INT32:
       return reinterpret_cast<bool (*)(const char*, int32)>(
-          validate_fn_proto)(flagname, VALUE_AS(atomic_int32));
+          validate_fn_proto)(flagname, VALUE_AS(std::atomic_int32_t));
     case FV_ATOMIC_UINT32:
       return reinterpret_cast<bool (*)(const char*, uint32)>(
-          validate_fn_proto)(flagname, VALUE_AS(atomic_uint32));
+          validate_fn_proto)(flagname, VALUE_AS(std::atomic_uint32_t));
     case FV_ATOMIC_INT64:
       return reinterpret_cast<bool (*)(const char*, int64)>(
-          validate_fn_proto)(flagname, VALUE_AS(atomic_int64));
+          validate_fn_proto)(flagname, VALUE_AS(std::atomic_int64_t));
     case FV_ATOMIC_UINT64:
       return reinterpret_cast<bool (*)(const char*, uint64)>(
-          validate_fn_proto)(flagname, VALUE_AS(atomic_uint64));
+          validate_fn_proto)(flagname, VALUE_AS(std::atomic_uint64_t));
     case FV_ATOMIC_DOUBLE:
       return reinterpret_cast<bool (*)(const char*, double)>(
-          validate_fn_proto)(flagname, VALUE_AS(atomic_double));
-    case FV_ATOMIC_STRING:
-      return reinterpret_cast<bool (*)(const char*, const string&)>(validate_fn_proto)(
-          flagname, VALUE_AS(atomic_string));
+          validate_fn_proto)(flagname, VALUE_AS(std::atomic<double>));
     default:
       assert(false);  // unknown type
       return false;
@@ -564,8 +552,7 @@ const char* FlagValue::TypeName() const {
       "uint32\0"
       "int64\0x"
       "uint64\0"
-      "double\0"
-      "string";
+      "double\0";
 
   if (type_ > FV_MAX_INDEX) {
     assert(false);
@@ -587,19 +574,17 @@ bool FlagValue::Equal(const FlagValue& x) const {
     case FV_DOUBLE: return VALUE_AS(double) == OTHER_VALUE_AS(x, double);
     case FV_STRING: return VALUE_AS(string) == OTHER_VALUE_AS(x, string);
     case FV_ATOMIC_BOOL:
-      return VALUE_AS(atomic_bool) == OTHER_VALUE_AS(x, atomic_bool);
+      return VALUE_AS(std::atomic_bool) == OTHER_VALUE_AS(x, std::atomic_bool);
     case FV_ATOMIC_INT32:
-      return VALUE_AS(atomic_int32) == OTHER_VALUE_AS(x, atomic_int32);
+      return VALUE_AS(std::atomic_int32_t) == OTHER_VALUE_AS(x, std::atomic_int32_t);
     case FV_ATOMIC_UINT32:
-      return VALUE_AS(atomic_uint32) == OTHER_VALUE_AS(x, atomic_uint32);
+      return VALUE_AS(std::atomic_uint32_t) == OTHER_VALUE_AS(x, std::atomic_uint32_t);
     case FV_ATOMIC_INT64:
-      return VALUE_AS(atomic_int64) == OTHER_VALUE_AS(x, atomic_int64);
+      return VALUE_AS(std::atomic_int64_t) == OTHER_VALUE_AS(x, std::atomic_int64_t);
     case FV_ATOMIC_UINT64:
-      return VALUE_AS(atomic_uint64) == OTHER_VALUE_AS(x, atomic_uint64);
+      return VALUE_AS(std::atomic_uint64_t) == OTHER_VALUE_AS(x, std::atomic_uint64_t);
     case FV_ATOMIC_DOUBLE:
-      return VALUE_AS(atomic_double) == OTHER_VALUE_AS(x, atomic_double);
-    case FV_ATOMIC_STRING:
-      return VALUE_AS(atomic_string) == OTHER_VALUE_AS(x, atomic_string);
+      return VALUE_AS(std::atomic<double>) == OTHER_VALUE_AS(x, std::atomic<double>);
     default: assert(false); return false;  // unknown type
   }
 }
@@ -614,19 +599,17 @@ FlagValue* FlagValue::New() const {
     case FV_DOUBLE: return new FlagValue(new double(0.0), true);
     case FV_STRING: return new FlagValue(new string, true);
     case FV_ATOMIC_BOOL:
-      return new FlagValue(new atomic_bool(false), true);
+      return new FlagValue(new std::atomic_bool(false), true);
     case FV_ATOMIC_INT32:
-      return new FlagValue(new atomic_int32(0), true);
+      return new FlagValue(new std::atomic_int32_t(0), true);
     case FV_ATOMIC_UINT32:
-      return new FlagValue(new atomic_uint32(0), true);
+      return new FlagValue(new std::atomic_uint32_t(0), true);
     case FV_ATOMIC_INT64:
-      return new FlagValue(new atomic_int64(0), true);
+      return new FlagValue(new std::atomic_int64_t(0), true);
     case FV_ATOMIC_UINT64:
-      return new FlagValue(new atomic_uint64(0), true);
+      return new FlagValue(new std::atomic_uint64_t(0), true);
     case FV_ATOMIC_DOUBLE:
-      return new FlagValue(new atomic_double(0.0), true);
-    case FV_ATOMIC_STRING:
-      return new FlagValue(new atomic_string, true);
+      return new FlagValue(new std::atomic<double>(0.0), true);
     default: assert(false); return NULL;  // unknown type
   }
 }
@@ -642,25 +625,22 @@ void FlagValue::CopyFrom(const FlagValue& x) {
     case FV_DOUBLE: SET_VALUE_AS(double, OTHER_VALUE_AS(x, double));  break;
     case FV_STRING: SET_VALUE_AS(string, OTHER_VALUE_AS(x, string));  break;
     case FV_ATOMIC_BOOL:
-      SET_VALUE_AS(atomic_bool, (bool)OTHER_VALUE_AS(x, atomic_bool));
+      SET_VALUE_AS(std::atomic_bool, (bool)OTHER_VALUE_AS(x, std::atomic_bool));
       break;
     case FV_ATOMIC_INT32:
-      SET_VALUE_AS(atomic_int32, (int32)OTHER_VALUE_AS(x, atomic_int32));
+      SET_VALUE_AS(std::atomic_int32_t, (int32)OTHER_VALUE_AS(x, std::atomic_int32_t));
       break;
     case FV_ATOMIC_UINT32:
-      SET_VALUE_AS(atomic_uint32, (uint32)OTHER_VALUE_AS(x, atomic_uint32));
+      SET_VALUE_AS(std::atomic_uint32_t, (uint32)OTHER_VALUE_AS(x, std::atomic_uint32_t));
       break;
     case FV_ATOMIC_INT64:
-      SET_VALUE_AS(atomic_int64, (int64)OTHER_VALUE_AS(x, atomic_int64));
+      SET_VALUE_AS(std::atomic_int64_t, (int64)OTHER_VALUE_AS(x, std::atomic_int64_t));
       break;
     case FV_ATOMIC_UINT64:
-      SET_VALUE_AS(atomic_uint64, (uint64)OTHER_VALUE_AS(x, atomic_uint64));
+      SET_VALUE_AS(std::atomic_uint64_t, (uint64)OTHER_VALUE_AS(x, std::atomic_uint64_t));
       break;
     case FV_ATOMIC_DOUBLE:
-      SET_VALUE_AS(atomic_double, (double)OTHER_VALUE_AS(x, atomic_double));
-      break;
-    case FV_ATOMIC_STRING:
-      SET_VALUE_AS(atomic_string, OTHER_VALUE_AS(x, atomic_string));
+      SET_VALUE_AS(std::atomic<double>, (double)OTHER_VALUE_AS(x, std::atomic<double>));
       break;
     default: assert(false);  // unknown type
   }
@@ -1189,29 +1169,33 @@ static void ParseFlagList(const char* value, vector<string>* flags) {
   }
 }
 
+static void PFATAL(const char *s) {
+	perror(s);
+	//gflags_exitfunc(1);
+}
+
 // Snarf an entire file into a C++ string.  This is just so that we
 // can do all the I/O in one place and not worry about it everywhere.
 // Plus, it's convenient to have the whole file contents at hand.
 // Adds a newline at the end of the file.
-static void PFATAL(const char *s) { 
-  perror(s); 
-  gflags_exitfunc(1); 
-}
 
 static string ReadFileIntoString(const char* filename) {
-  const int kBufSize = 8092;
+  const int kBufSize = 8192;
   char buffer[kBufSize];
   string s;
   FILE* fp;
   if ((errno = SafeFOpen(&fp, filename, "r")) != 0) 
 	PFATAL(filename);
-  size_t n;
-  while ( (n=fread(buffer, 1, kBufSize, fp)) > 0 ) {
-    if (ferror(fp))  
-	  PFATAL(filename);
-    s.append(buffer, n);
+  else {
+	  size_t n;
+	  while ((n=fread(buffer, 1, kBufSize, fp)) > 0) {
+		  if (ferror(fp))
+			  PFATAL(filename);
+		  else
+			  s.append(buffer, n);
+	  }
+	  fclose(fp);
   }
-  fclose(fp);
   return s;
 }
 
@@ -1284,7 +1268,7 @@ uint32 CommandLineFlagParser::ParseNewCommandLineFlags(int* argc, const char*** 
                 || strstr(flag->help(), "false"))) {
           LOG(WARNING) << "Did you really mean to set flag '"
                        << flag->name() << "' to the value '"
-                       << value << "'?";
+                       << value << "'?\n";
         }
       }
     }
@@ -1590,13 +1574,13 @@ bool AddFlagValidator(const void* flag_ptr, ValidateFnProto validate_fn_proto) {
   CommandLineFlag* flag = registry->FindFlagViaPtrLocked(flag_ptr);
   if (!flag) {
     LOG(WARNING) << "Ignoring RegisterValidateFunction() for flag pointer "
-                 << flag_ptr << ": no flag found at that address";
+                 << flag_ptr << ": no flag found at that address.\n";
     return false;
   } else if (validate_fn_proto == flag->validate_function()) {
     return true;    // ok to register the same function over and over again
   } else if (validate_fn_proto != NULL && flag->validate_function() != NULL) {
     LOG(WARNING) << "Ignoring RegisterValidateFunction() for flag '"
-                 << flag->name() << "': validate-fn already registered";
+                 << flag->name() << "': validate-fn already registered.\n";
     return false;
   } else {
     flag->validate_fn_proto_ = validate_fn_proto;
@@ -1660,13 +1644,12 @@ INSTANTIATE_FLAG_REGISTERER_CTOR(int64);
 INSTANTIATE_FLAG_REGISTERER_CTOR(uint64);
 INSTANTIATE_FLAG_REGISTERER_CTOR(double);
 INSTANTIATE_FLAG_REGISTERER_CTOR(std::string);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_bool);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_int32);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_uint32);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_int64);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_uint64);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_double);
-INSTANTIATE_FLAG_REGISTERER_CTOR(atomic_string);
+INSTANTIATE_FLAG_REGISTERER_CTOR(std::atomic_bool);
+INSTANTIATE_FLAG_REGISTERER_CTOR(std::atomic_int32_t);
+INSTANTIATE_FLAG_REGISTERER_CTOR(std::atomic_uint32_t);
+INSTANTIATE_FLAG_REGISTERER_CTOR(std::atomic_int64_t);
+INSTANTIATE_FLAG_REGISTERER_CTOR(std::atomic_uint64_t);
+INSTANTIATE_FLAG_REGISTERER_CTOR(std::atomic<double>);
 
 #undef INSTANTIATE_FLAG_REGISTERER_CTOR
 
@@ -2143,32 +2126,28 @@ bool RegisterFlagValidator(const string* flag,
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
 
-bool RegisterFlagValidator(const atomic_bool* flag,
+bool RegisterFlagValidator(const std::atomic_bool* flag,
                            bool (*validate_fn)(const char*, bool)) {
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
-bool RegisterFlagValidator(const atomic_int32* flag,
+bool RegisterFlagValidator(const std::atomic_int32_t* flag,
                            bool (*validate_fn)(const char*, int32)) {
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
-bool RegisterFlagValidator(const atomic_uint32* flag,
+bool RegisterFlagValidator(const std::atomic_uint32_t* flag,
                            bool (*validate_fn)(const char*, uint32)) {
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
-bool RegisterFlagValidator(const atomic_int64* flag,
+bool RegisterFlagValidator(const std::atomic_int64_t* flag,
                            bool (*validate_fn)(const char*, int64)) {
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
-bool RegisterFlagValidator(const atomic_uint64* flag,
+bool RegisterFlagValidator(const std::atomic_uint64_t* flag,
                            bool (*validate_fn)(const char*, uint64)) {
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
-bool RegisterFlagValidator(const atomic_double* flag,
+bool RegisterFlagValidator(const std::atomic<double>* flag,
                            bool (*validate_fn)(const char*, double)) {
-  return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
-}
-bool RegisterFlagValidator(const atomic_string* flag,
-                           bool (*validate_fn)(const char*, const string&)) {
   return AddFlagValidator(flag, reinterpret_cast<ValidateFnProto>(validate_fn));
 }
 

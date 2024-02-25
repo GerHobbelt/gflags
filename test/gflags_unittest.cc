@@ -46,6 +46,7 @@
 #endif
 #include <vector>
 #include <string>
+#include <atomic>
 
 #include "monolithic_examples.h"
 
@@ -71,8 +72,15 @@ using GFLAGS_NAMESPACE::RegisterFlagValidator;
 using GFLAGS_NAMESPACE::CommandLineFlagInfo;
 using GFLAGS_NAMESPACE::GetAllFlags;
 
+namespace {
+	template <typename T1, typename T2>
+	void SetFlagValue(T1* var, const T2& value) {
+		*var = value;
+	}
+}
+
 DEFINE_string(test_tmpdir, "", "Dir we use for temp files");
-DEFINE_string(srcdir, StringFromEnv("SRCDIR", "."), "Source-dir root, needed to find gflags_unittest_flagfile");
+DEFINE_string(srcdir, StringFromEnv("SRCDIR", "."), "Source-dir root, needed to find gflags_unittest_flag_file");
 
 DECLARE_string(tryfromenv);   // in gflags.cc
 
@@ -91,15 +99,12 @@ DEFINE_ATOMIC_int64(test_atomic_int64, -2, "");
 DEFINE_ATOMIC_uint32(test_atomic_uint32, 1, "");
 DEFINE_ATOMIC_uint64(test_atomic_uint64, 2, "");
 DEFINE_ATOMIC_double(test_atomic_double, -1.0, "");
-DEFINE_ATOMIC_string(test_atomic_string, "initial", "");
 
 static bool ValidateAtomicBool(const char* flag, bool value) { return true; }
 DEFINE_validator(test_atomic_bool, ValidateAtomicBool);
-static bool ValidateAtomicString(const char* flag, const string& value) { return true; }
-DEFINE_validator(test_atomic_string, ValidateAtomicString);
 
 //
-// The below ugliness gets some additional code coverage in the -helpxml
+// The below ugliness gets some additional code coverage in the -help-xml
 // and -helpmatch test cases having to do with string lengths and formatting
 //
 DEFINE_bool(test_bool_with_quite_quite_quite_quite_quite_quite_quite_quite_quite_quite_quite_quite_quite_quite_long_name,
@@ -263,16 +268,16 @@ static string TmpFile(const string& basename) {
 #endif
 }
 
-// Returns the definition of the --flagfile flag to be used in the tests.
+// Returns the definition of the --flag_file flag to be used in the tests.
 // Must be called after ParseCommandLineFlags().
 static const char* GetFlagFileFlag() {
 #ifdef _MSC_VER
-  static const string flagfile = FLAGS_srcdir + "\\gflags_unittest_flagfile";
+  static const string flag_file = FLAGS_srcdir + "\\gflags_unittest_flagfile";
 #else
-  static const string flagfile = FLAGS_srcdir + "/gflags_unittest_flagfile";
+  static const string flag_file = FLAGS_srcdir + "/gflags_unittest_flagfile";
 #endif
-  static const string flagfile_flag = string("--flagfile=") + flagfile;
-  return flagfile_flag.c_str();
+  static const string flag_file_flag = string("--flag_file=") + flag_file;
+  return flag_file_flag.c_str();
 }
 
 
@@ -299,21 +304,20 @@ TEST(FlagTypes, FlagTypes) {
   AssertIsType<uint32>(FLAGS_test_uint32);
   AssertIsType<uint64>(FLAGS_test_uint64);
   AssertIsType<double>(FLAGS_test_double);
-  AssertIsType<string>(FLAGS_test_string);
-  AssertIsType<atomic_bool>(FLAGS_test_atomic_bool);
-  AssertIsType<atomic_int32>(FLAGS_test_atomic_int32);
-  AssertIsType<atomic_int64>(FLAGS_test_atomic_int64);
-  AssertIsType<atomic_uint32>(FLAGS_test_atomic_uint32);
-  AssertIsType<atomic_uint64>(FLAGS_test_atomic_uint64);
-  AssertIsType<atomic_double>(FLAGS_test_atomic_double);
-  AssertIsType<atomic_string>(FLAGS_test_atomic_string);
+  AssertIsType<std::string>(FLAGS_test_string);
+  AssertIsType<std::atomic_bool>(FLAGS_test_atomic_bool);
+  AssertIsType<std::atomic_int32_t>(FLAGS_test_atomic_int32);
+  AssertIsType<std::atomic_int64_t>(FLAGS_test_atomic_int64);
+  AssertIsType<std::atomic_uint32_t>(FLAGS_test_atomic_uint32);
+  AssertIsType<std::atomic_uint64_t>(FLAGS_test_atomic_uint64);
+  AssertIsType<std::atomic<double>>(FLAGS_test_atomic_double);
 }
 
 #if GTEST_HAS_DEATH_TEST
 // Death tests for "help" options.
 //
 // The help system automatically calls gflags_exitfunc(1) when you specify any of
-// the help-related flags ("-helpmatch", "-helpxml") so we can't test
+// the help-related flags ("-helpmatch", "-help-xml") so we can't test
 // those mainline.
 
 // Tests that "-helpmatch" causes the process to die.
@@ -323,10 +327,12 @@ TEST(ReadFlagsFromStringDeathTest, HelpMatch) {
 }
 
 
-// Tests that "-helpxml" causes the process to die.
+// Tests that "-help-xml" causes the process to die.
 TEST(ReadFlagsFromStringDeathTest, HelpXml) {
-  EXPECT_DEATH(ReadFlagsFromString("-helpxml", GetArgv0(), true),
+  EXPECT_DEATH(ReadFlagsFromString("-help-xml", GetArgv0(), true),
                "");
+  EXPECT_DEATH(ReadFlagsFromString("-help_xml", GetArgv0(), true),
+			   "");
 }
 #endif
 
@@ -679,7 +685,6 @@ TEST(SetFlagValueTest, IllegalValues) {
   EXPECT_EQ("", SetCommandLineOption("test_atomic_uint32", ""));
   EXPECT_EQ("", SetCommandLineOption("test_atomic_uint64", ""));
   EXPECT_EQ("", SetCommandLineOption("test_atomic_double", ""));
-  EXPECT_EQ("test_atomic_string set to \n", SetCommandLineOption("test_atomic_string", ""));
 
   EXPECT_TRUE(FLAGS_test_bool);
   EXPECT_EQ(119, FLAGS_test_int32);
@@ -910,8 +915,7 @@ TEST(FlagSaverTest, CanSaveVariousTypedFlagValues) {
   SetFlagValue(&FLAGS_test_atomic_int64, -3);
   SetFlagValue(&FLAGS_test_atomic_uint64, 4);
   SetFlagValue(&FLAGS_test_atomic_double, 5.0);
-  SetFlagValue(&FLAGS_test_atomic_string, "good");
-
+  
   // Saves the flag states.
   {
     FlagSaver fs;
@@ -930,7 +934,6 @@ TEST(FlagSaverTest, CanSaveVariousTypedFlagValues) {
     SetFlagValue(&FLAGS_test_atomic_int64, -7);
     SetFlagValue(&FLAGS_test_atomic_uint64, 8);
     SetFlagValue(&FLAGS_test_atomic_double, 8.0);
-    SetFlagValue(&FLAGS_test_atomic_string, "bad");
 
     // Restores the flag states.
   }
@@ -949,7 +952,6 @@ TEST(FlagSaverTest, CanSaveVariousTypedFlagValues) {
   EXPECT_EQ(-3, FLAGS_test_atomic_int64);
   EXPECT_EQ(4, FLAGS_test_atomic_uint64);
   EXPECT_DOUBLE_EQ(5.0, FLAGS_test_atomic_double);
-  EXPECT_EQ("good", FLAGS_test_atomic_string);
 }
 
 TEST(GetAllFlagsTest, BaseTest) {
@@ -1132,7 +1134,7 @@ TEST(GetCommandLineFlagInfoTest, FlagExists) {
   EXPECT_EQ("true", info.current_value);
   EXPECT_EQ("false", info.default_value);
   EXPECT_FALSE(info.is_default);
-  EXPECT_FALSE(info.has_validator_fn);
+  EXPECT_TRUE(info.has_validator_fn);    // due to DEFINE_validator(test_atomic_bool, ValidateAtomicBool) at top of this test file.
   EXPECT_EQ(&FLAGS_test_atomic_bool, info.flag_ptr);
 
   SetFlagValue(&FLAGS_test_atomic_bool, false);
@@ -1144,7 +1146,7 @@ TEST(GetCommandLineFlagInfoTest, FlagExists) {
   EXPECT_EQ("false", info.current_value);
   EXPECT_EQ("false", info.default_value);
   EXPECT_FALSE(info.is_default);  // value is same, but flag *was* modified
-  EXPECT_FALSE(info.has_validator_fn);
+  EXPECT_TRUE(info.has_validator_fn);    // due to DEFINE_validator(test_atomic_bool, ValidateAtomicBool) at top of this test file.
   EXPECT_EQ(&FLAGS_test_atomic_bool, info.flag_ptr);
 }
 
@@ -1334,6 +1336,16 @@ TEST(ParseCommandLineFlagsUsesLastDefinitionTest,
   EXPECT_EQ(2, ParseTestFlag(false, arraysize(argv) - 1, argv));
 }
 
+static void PrepFlagFileForTest() {
+	auto fname = GetFlagFileFlag();
+	fname = strchr(fname, '=') + 1;
+	auto f = fopen(fname, "w");
+	EXPECT_NE(NULL, f);
+	fputs("--test_flag=1\n", f);
+	fputs("--test_flag=2\n", f);
+	fclose(f);
+}
+
 TEST(ParseCommandLineFlagsUsesLastDefinitionTest,
      WhenFlagIsDefinedTwiceInFlagFile) {
   const char* argv[] = {
@@ -1341,6 +1353,8 @@ TEST(ParseCommandLineFlagsUsesLastDefinitionTest,
     GetFlagFileFlag(),
     NULL,
   };
+
+  PrepFlagFileForTest();
 
   EXPECT_EQ(2, ParseTestFlag(true, arraysize(argv) - 1, argv));
   EXPECT_EQ(2, ParseTestFlag(false, arraysize(argv) - 1, argv));
@@ -1355,6 +1369,8 @@ TEST(ParseCommandLineFlagsUsesLastDefinitionTest,
     NULL,
   };
 
+  PrepFlagFileForTest();
+
   EXPECT_EQ(2, ParseTestFlag(true, arraysize(argv) - 1, argv));
   EXPECT_EQ(2, ParseTestFlag(false, arraysize(argv) - 1, argv));
 }
@@ -1367,6 +1383,8 @@ TEST(ParseCommandLineFlagsUsesLastDefinitionTest,
     "--test_flag=3",
     NULL,
   };
+
+  PrepFlagFileForTest();
 
   EXPECT_EQ(3, ParseTestFlag(true, arraysize(argv) - 1, argv));
   EXPECT_EQ(3, ParseTestFlag(false, arraysize(argv) - 1, argv));
@@ -1381,6 +1399,8 @@ TEST(ParseCommandLineFlagsUsesLastDefinitionTest,
     "--test_flag=3",
     NULL,
   };
+
+  PrepFlagFileForTest();
 
   EXPECT_EQ(3, ParseTestFlag(true, arraysize(argv) - 1, argv));
   EXPECT_EQ(3, ParseTestFlag(false, arraysize(argv) - 1, argv));

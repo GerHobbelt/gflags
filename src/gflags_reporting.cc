@@ -68,12 +68,12 @@
 
 // The 'reporting' flags.  They all call gflags_exitfunc().
 DEFINE_bool  (help,        false, "show help on all flags [tip: all flags can have two dashes]");
-DEFINE_bool  (helpful,    false, "show help on all flags -- same as -help");
+DEFINE_bool  (helpful,     false, "show help on all flags -- same as -help");
 DEFINE_bool  (helpshort,   false, "show help on only the main module for this program");
 DEFINE_string(helpon,      "",    "show help on the modules named by this flag value");
 DEFINE_string(helpmatch,   "",    "show help on modules whose name contains the specified substr");
 DEFINE_bool  (helppackage, false, "show help on all modules in the main package");
-DEFINE_bool  (help_xml,     false, "produce an xml version of help");
+DEFINE_bool  (help_xml,    false, "produce an xml version of help");
 DEFINE_bool  (version,     false, "show version and build info and exit");
 
 
@@ -207,7 +207,9 @@ static string DescribeOneFlagInXML(const CommandLineFlagInfo& flag) {
   // and meaning need to avoid attribute normalization.  This way it
   // can be parsed by simple programs, in addition to xml parsers.
   string r("<flag>");
+#ifndef STRIP_INTERNAL_FLAG_HELP
   AddXMLTag(&r, "file", flag.filename);
+#endif
   AddXMLTag(&r, "name", flag.name);
   AddXMLTag(&r, "meaning", flag.description);
   AddXMLTag(&r, "default", flag.default_value);
@@ -232,11 +234,21 @@ static string DescribeOneFlagInXML(const CommandLineFlagInfo& flag) {
 
 static const char* Basename(const char* filename) {
   const char* sep = strrchr(filename, PATH_SEPARATOR);
+#ifdef OS_WINDOWS
+  const char* sep2 = strrchr(filename, '/');
+  if (sep2 > sep)    // BTW: this compare also works when either pointer is NULL
+	  sep = sep2;
+#endif
   return sep ? sep + 1 : filename;
 }
 
 static string Dirname(const string& filename) {
   string::size_type sep = filename.rfind(PATH_SEPARATOR);
+#ifdef OS_WINDOWS
+  string::size_type sep2 = filename.rfind('/');
+  if (sep2 != string::npos && (sep == string::npos || sep2 > sep))
+	  sep = sep2;
+#endif
   return filename.substr(0, (sep == string::npos) ? 0 : sep);
 }
 
@@ -252,7 +264,7 @@ static bool FileMatchesSubstring(const string& filename,
     // the string to be at the beginning of a directory component.
     // That should match the first directory component as well, so
     // we allow '/foo' to match a filename of 'foo'.
-    if (!target->empty() && (*target)[0] == PATH_SEPARATOR &&
+    if (!target->empty() && ((*target)[0] == PATH_SEPARATOR || (*target)[0] == '/') &&
         strncmp(filename.c_str(), target->c_str() + 1,
                 strlen(target->c_str() + 1)) == 0)
       return true;
