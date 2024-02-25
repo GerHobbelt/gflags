@@ -123,7 +123,7 @@ void gflags_std_exit(int retval);
 #define EXPECT_TRUE(condition)                                  \
   if (true) {                                                   \
     if (!(condition)) {                                         \
-      GFLAGS_TEST_STDERR_PRINTF("Check failed: %s\n", #condition);    \
+      GFLAGS_TEST_STDERR_PRINTF("%s:%d] Check failed: %s\n", __FILE__, __LINE__, #condition);    \
       GFLAGS_TEST_STD_EXIT(1);                                        \
     }                                                           \
   } else std::cerr << ""
@@ -131,7 +131,7 @@ void gflags_std_exit(int retval);
 #define EXPECT_OP(op, val1, val2)                                       \
   if (true) {                                                           \
     if (!((val1) op (val2))) {                                          \
-      GFLAGS_TEST_STDERR_PRINTF("Check failed: %s %s %s\n", #val1, #op, #val2);   \
+      GFLAGS_TEST_STDERR_PRINTF("%s:%d] Check failed: %s %s %s\n", __FILE__, __LINE__, #val1, #op, #val2);   \
       GFLAGS_TEST_STD_EXIT(1);                                                \
     }                                                                   \
   } else std::cerr << ""
