@@ -394,9 +394,9 @@ bool FlagValue::ParseFrom(const char* value) {
       if (static_cast<uint32>(r) != r)                          // worked, but number out of range
         return false;
       if (type_ == FV_UINT32) {
-      SET_VALUE_AS(uint32, static_cast<uint32>(r));
+        SET_VALUE_AS(uint32, static_cast<uint32>(r));
       } else {
-      SET_VALUE_AS(std::atomic_uint32_t, static_cast<uint32>(r));
+        SET_VALUE_AS(std::atomic_uint32_t, static_cast<uint32>(r));
       }
       return true;
     }
