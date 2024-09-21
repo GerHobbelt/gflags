@@ -1,6 +1,7 @@
 // The macro can already be defined when using Unity builds.
-#undef GFLAGS_DLL_DECLARE_FLAG
+#ifndef GFLAGS_DLL_DECLARE_FLAG
 #define GFLAGS_DLL_DECLARE_FLAG
+#endif
 
 #include <iostream>
 #include <gflags/gflags_declare.h>
