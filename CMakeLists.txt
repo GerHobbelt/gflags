@@ -98,6 +98,7 @@ set (PACKAGE_BUGREPORT   "https://github.com/gflags/gflags/issues")
 set (PACKAGE_DESCRIPTION "A commandline flags library that allows for distributed flags.")
 set (PACKAGE_URL         "http://gflags.github.io/gflags")
 set (CMAKE_CXX_STANDARD 20)
+set (CMAKE_DEBUG_POSTFIX "d")
 
 project (${PACKAGE_NAME} VERSION ${PACKAGE_VERSION} LANGUAGES CXX)
 if (CMAKE_VERSION VERSION_LESS 3.4)
