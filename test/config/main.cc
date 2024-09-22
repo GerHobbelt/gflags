@@ -18,6 +18,7 @@ DEFINE_validator(message, ValidateMessage);
 #define main(cnt, arr)      gflags_test_config_main(cnt, arr)
 #endif
 
+extern "C"
 int main(int argc, const char** argv)
 {
   gflags::SetUsageMessage("Test CMake configuration of gflags library (gflags-config.cmake)");

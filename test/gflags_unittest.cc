@@ -1724,6 +1724,7 @@ void gflags_std_exit(int retval) {
 #define main(cnt, arr)      gflags_test_unittests_main(cnt, arr)
 #endif
 
+extern "C"
 int main(int argc, const char** argv)
 {
   return GFLAGS_NAMESPACE::unittests_main(argc, argv);

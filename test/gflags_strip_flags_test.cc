@@ -54,6 +54,7 @@ DEFINE_bool(test, true, "This text should be stripped out");
 #define main(cnt, arr)      gflags_test_strip_flags_main(cnt, arr)
 #endif
 
+extern "C"
 int main(int argc, const char** argv)
 {
   SetUsageMessage("Usage message");

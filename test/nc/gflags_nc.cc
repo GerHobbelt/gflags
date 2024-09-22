@@ -75,6 +75,7 @@ DEFINE_string(some_string_flag,
 #define main(cnt, arr)      gflags_test_nc_main(cnt, arr)
 #endif
 
+extern "C"
 int main(int argc, const char** argv)
 {
   return 0;

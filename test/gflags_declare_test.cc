@@ -16,6 +16,7 @@ void gflags_print_message(); // in gflags_declare_flags.cc
 #define main(cnt, arr)      gflags_test_declare_main(cnt, arr)
 #endif
 
+extern "C"
 int main(int argc, const char** argv)
 {
   GFLAGS_NAMESPACE::SetUsageMessage("Test compilation and use of gflags_declare.h");

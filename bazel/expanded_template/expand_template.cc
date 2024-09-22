@@ -31,6 +31,7 @@ struct Substitution {
 //
 // Since it's only used as a private implementation detail of a rule and not
 // user invoked we don't bother with error checking.
+extern "C"
 int main(int argc, const char** argv) {
   // Parse args.
   const char* template_path = nullptr;
