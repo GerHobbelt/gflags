@@ -302,7 +302,13 @@ static void ShowUsageWithFlagsMatching(const char *argv0,
           first_directory = false;
         }
 #ifndef STRIP_INTERNAL_FLAG_HELP
+#if defined(GFLAGS_HIDE_PATH_IN_HELP_ALL)
+        gflags_stderr_printf("\n");
+#elif defined(GFLAGS_HIDE_PATH_IN_HELP_BASENAME)
+        gflags_stderr_printf("\n  Flags from %s:\n", Basename(flag->filename.c_str()));
+#else
         gflags_stderr_printf("\n  Flags from %s:\n", flag->filename.c_str());
+#endif
 #endif  // STRIP_INTERNAL_FLAG_HELP
         last_filename = flag->filename;
       }
