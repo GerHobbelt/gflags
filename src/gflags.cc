@@ -1807,7 +1807,7 @@ const char* VersionString() {
 bool GetCommandLineOption(const char* name, string* value) {
   if (NULL == name)
     return false;
-  assert(value);
+  assert(value != nullptr);
 
   FlagRegistry* const registry = FlagRegistry::GlobalRegistry();
   FlagRegistryLock frl(registry);
@@ -1828,7 +1828,7 @@ bool GetCommandLineFlagInfo(const char* name, CommandLineFlagInfo* OUTPUT) {
   if (flag == NULL) {
     return false;
   } else {
-    assert(OUTPUT);
+    assert(OUTPUT != nullptr);
     flag->FillCommandLineFlagInfo(OUTPUT);
     return true;
   }
