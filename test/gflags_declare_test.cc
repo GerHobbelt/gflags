@@ -8,7 +8,7 @@ DECLARE_string(message); // in gflags_delcare_test.cc
 #else
 DEFINE_string(message, "", "The message to print");
 #endif
-void gflags_print_message(); // in gflags_declare_flags.cc
+void gflags_print_message(void); // in gflags_declare_flags.cc
 
 
 

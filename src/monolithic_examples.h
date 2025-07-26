@@ -13,6 +13,7 @@ int gflags_test_declare_main(int argc, const char** argv);
 int gflags_test_strip_flags_main(int argc, const char** argv);
 int gflags_test_unittests_main(int argc, const char** argv);
 int gflags_test_nc_main(int argc, const char** argv);
+int gflags_example_main(int argc, const char** argv);
 
 #ifdef __cplusplus
 }

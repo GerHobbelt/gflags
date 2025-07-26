@@ -2,8 +2,14 @@
 
 #include "args.hpp"
 
+#include "monolithic_examples.h"
 
-int main(int argc, char **argv)
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      gflags_example_main(cnt, arr)
+#endif
+
+extern "C"
+int main(int argc, const char **argv)
 {
   if (argc <= 1)
   {

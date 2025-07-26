@@ -8,7 +8,7 @@
 
 DECLARE_string(message); // in gflags_delcare_test.cc
 
-void gflags_print_message()
+void gflags_print_message(void)
 {
   std::cout << FLAGS_message << std::endl;
 }
