@@ -4,13 +4,13 @@
 #include "monolithic_examples.h"
 
 
-DEFINE_string(message, "Hello World!", "The message to print");
+DEFINE_string(config_message, "Hello World!", "The message to print");
 
 static bool ValidateMessage(const char* flagname, const std::string &message)
 {
   return !message.empty();
 }
-DEFINE_validator(message, ValidateMessage);
+DEFINE_validator(config_message, ValidateMessage);
 
 
 
@@ -24,7 +24,7 @@ int main(int argc, const char** argv)
   gflags::SetUsageMessage("Test CMake configuration of gflags library (gflags-config.cmake)");
   gflags::SetVersionString("0.1");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  std::cout << FLAGS_message << std::endl;
+  std::cout << FLAGS_config_message << std::endl;
   gflags::ShutDownCommandLineFlags();
   return 0;
 }

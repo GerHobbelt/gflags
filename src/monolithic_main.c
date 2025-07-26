@@ -14,6 +14,7 @@ MONOLITHIC_CMD_TABLE_START()
 	{ "test_strip_flags", { .fa = gflags_test_strip_flags_main } },
 	{ "unittests", { .fa = gflags_test_unittests_main } },
 	{ "test_nc", { .fa = gflags_test_nc_main } },
+	{ "example", { .fa = gflags_example_main } },
 
 MONOLITHIC_CMD_TABLE_END();
 
