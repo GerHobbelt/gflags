@@ -253,7 +253,7 @@ namespace fLI {
   int32 FLAGS_notldflag2 = FLAGS_nonotldflag2;
   static FlagRegisterer o_tldflag2(
     "tldflag2",
-    "should show up in --helpshort", "gflags_unittest.",
+    "should show up in --helpshort", "gflags_unittest.cc",
     &FLAGS_tldflag2, &FLAGS_notldflag2);
 }
 using fLI::FLAGS_tldflag2;
