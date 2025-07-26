@@ -672,6 +672,7 @@ class CommandLineFlag {
   const char* help() const { return help_; }
   const char* filename() const { return file_; }
   const char* CleanFileName() const;  // nixes irrelevant prefix such as homedir
+  void RemoveFileNamePrefix(size_t length);
   string current_value() const { return current_->ToString(); }
   string default_value() const { return defvalue_->ToString(); }
   const char* type_name() const { return defvalue_->TypeName(); }
@@ -703,6 +704,7 @@ class CommandLineFlag {
   const char* const help_;     // Help message
   const char* const file_;     // Which file did this come from?
   bool modified_;              // Set after default assignment?
+  unsigned int clean_file_offset_{0};
   FlagValue* defvalue_;        // Default value for flag
   FlagValue* current_;         // Current value for flag
   // This is a casted, 'generic' version of validate_fn, which actually
@@ -735,7 +737,40 @@ const char* CommandLineFlag::CleanFileName() const {
   // Need a better way to produce more user friendly help output or
   // "anonymize" file paths in help output, respectively.
   // Follow issue at: https://github.com/gflags/gflags/issues/86
-  return filename();
+  //
+  // See FlagRegistry::CleanupRegisteredFlagFilepathsLocked() : it's applied AFTER
+  // all predefined flags have been registered and BEFORE any info about them
+  // is requested, e.g. in commandline parsing or --help output production.
+  //
+  const char *fn = file_ + clean_file_offset_;
+  while (strchr("/\\", *fn))
+	  fn++;
+  return fn;
+}
+
+void CommandLineFlag::RemoveFileNamePrefix(size_t length) {
+	const char *ep1 = strrchr(file_, '/');
+	const char *ep2 = strrchr(file_, '\\');
+	// see reduce_to_common_prefix(): mirror that heuristic here:
+	if (!ep1 && !ep2) {
+		clean_file_offset_ = 0;
+		return;
+	}
+
+	if (!ep1)
+		ep1 = file_;
+	else
+		ep1++;
+	if (!ep2)
+		ep2 = file_;
+	else
+		ep2++;
+	if (ep2 > ep1)
+		ep1 = ep2;
+	const char *ep3 = file_ + length;
+	if (ep3 > ep1)
+		ep3 = ep1;
+	clean_file_offset_ = ep3 - file_;
 }
 
 void CommandLineFlag::FillCommandLineFlagInfo(
@@ -815,6 +850,11 @@ class FlagRegistry {
 
   // Store a flag in this registry.  Takes ownership of the given pointer.
   void RegisterFlag(CommandLineFlag* flag);
+
+  void CleanupRegisteredFlagFilepathsLocked(void);
+protected:
+  unsigned int flag_filepaths_have_been_cleaned_{0};
+public:
 
   void Lock() { lock_.Lock(); }
   void Unlock() { lock_.Unlock(); }
@@ -905,7 +945,48 @@ void FlagRegistry::RegisterFlag(CommandLineFlag* flag) {
   Unlock();
 }
 
+static void reduce_to_common_prefix(std::string &prefix, const char *path) {
+	const char *ep1 = strrchr(path, '/');
+	const char *ep2 = strrchr(path, '\\');
+	// heuristic: DO NOT involve paths which merely specify a filename and nothing else:
+	if (!ep1 && !ep2)
+		return;
+	if (!ep1)
+		ep1 = path;
+	if (ep2 && ep2 > ep1)
+		ep1 = ep2;
+	int i;
+	for (i = 0; path + i < ep1 && prefix[i]; i++) {
+		if (path[i] != prefix[i])
+			break;
+	}
+	if (i > 0 && !strchr("/\\", prefix[i]) && strchr("/\\", prefix[i - 1]))
+		i--;
+	prefix.resize(i);
+}
+
+void FlagRegistry::CleanupRegisteredFlagFilepathsLocked() {
+	if (flag_filepaths_have_been_cleaned_ != flags_.size() && flags_.size() >= 1) {
+		// find common path prefix(es)...
+		std::string prefix = flags_.begin()->second->filename();
+		reduce_to_common_prefix(prefix, prefix.c_str());
+		for (auto p : flags_) {
+			reduce_to_common_prefix(prefix, p.second->filename());
+		}
+
+		// we have our common prefix: now apply it across the board:
+		for (auto p : flags_) {
+			auto *flag = p.second;
+			flag->RemoveFileNamePrefix(prefix.size());
+		}
+
+		flag_filepaths_have_been_cleaned_ = flags_.size();
+	}
+}
+
 CommandLineFlag* FlagRegistry::FindFlagLocked(const char* name) {
+  CleanupRegisteredFlagFilepathsLocked();
+
   FlagConstIterator i = flags_.find(name);
   if (i == flags_.end()) {
     // If the name has dashes in it, try again after replacing with
@@ -920,6 +1001,8 @@ CommandLineFlag* FlagRegistry::FindFlagLocked(const char* name) {
 }
 
 CommandLineFlag* FlagRegistry::FindFlagViaPtrLocked(const void* flag_ptr) {
+  CleanupRegisteredFlagFilepathsLocked();
+
   FlagPtrMap::const_iterator i = flags_by_ptr_.find(flag_ptr);
   if (i == flags_by_ptr_.end()) {
     return NULL;
@@ -1693,6 +1776,7 @@ struct FilenameFlagnameCmp {
 void GetAllFlags(vector<CommandLineFlagInfo>* OUTPUT) {
   FlagRegistry* const registry = FlagRegistry::GlobalRegistry();
   registry->Lock();
+  registry->CleanupRegisteredFlagFilepathsLocked();
   for (FlagRegistry::FlagConstIterator i = registry->flags_.begin();
        i != registry->flags_.end(); ++i) {
     CommandLineFlagInfo fi;
