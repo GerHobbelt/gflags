@@ -72,7 +72,7 @@
 ## - GFLAGS_INSTALL_SHARED_LIBS
 ## - GFLAGS_INSTALL_STATIC_LIBS
 
-cmake_minimum_required (VERSION 3.11)
+cmake_minimum_required (VERSION 3.11 FATAL_ERROR)
 
 if (POLICY CMP0042)
   cmake_policy (SET CMP0042 NEW)
@@ -136,6 +136,8 @@ endif ()
 # tree of a project that uses it, no variables should be added to the CMake cache;
 # users may set the non-cached variable GFLAGS_IS_SUBPROJECT before add_subdirectory(gflags)
 if (NOT DEFINED GFLAGS_IS_SUBPROJECT)
+  get_filename_component(CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}" ABSOLUTE)
+  get_filename_component(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}" ABSOLUTE)
   if ("^${CMAKE_SOURCE_DIR}$" STREQUAL "^${PROJECT_SOURCE_DIR}$")
     set (GFLAGS_IS_SUBPROJECT FALSE)
   else ()
