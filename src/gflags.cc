@@ -1555,24 +1555,26 @@ string trim(const string& str, const string& whitespace = " \t")
 
 string CommandLineFlagParser::ProcessOptionsFromStringLocked(
     const string& contentdata, FlagSettingMode set_mode) {
-  string retval;
+  string line, retval;
   const char* flag_file_contents = contentdata.c_str();
   bool flags_are_relevant = true;   // set to false when filenames don't match
   bool in_filename_section = false;
 
-  const char* line_end = flag_file_contents;
   // We read this file a line at a time.
-  for (; line_end; flag_file_contents = line_end + 1) {
+  while (flag_file_contents) {
     while (*flag_file_contents && isspace(*flag_file_contents))
       ++flag_file_contents;
     // Windows uses "\r\n"
-    line_end = strchr(flag_file_contents, '\r');
+    const char* line_end = strchr(flag_file_contents, '\r');
     if (line_end == NULL)
         line_end = strchr(flag_file_contents, '\n');
-
-    size_t len = line_end ? line_end - flag_file_contents
-                          : strlen(flag_file_contents);
-    string line(flag_file_contents, len);
+    if (line_end == NULL) {
+      line.assign(flag_file_contents, strlen(flag_file_contents));
+    } else {
+      line.assign(flag_file_contents, line_end - flag_file_contents);
+      line_end += 1;
+    }
+    flag_file_contents = line_end;
 
     // Remove leading and trailing spaces
     line = trim(line);
